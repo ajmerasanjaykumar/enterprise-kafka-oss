@@ -1,47 +1,51 @@
-# Enterprise Kafka RBAC Permission Matrix
+# Enterprise Kafka RBAC Permission Matrix & Domain Examples
 
-This matrix details the role definitions, permitted actions, and scoping rules implemented across our Open Policy Agent (OPA) policy and Kafbat UI.
+This document details the role definitions, permitted actions, and domain isolation rules (Equities vs. Fixed Income) implemented across our Open Policy Agent (OPA) policy.
 
-## Role Definitions
+## 1. Confluent Role Mapping
 
-| Role Name | Confluent Equivalent | Scope | Description |
+| Role Name | Confluent Equivalent | Scope Pattern | Permitted Operations |
 | :--- | :--- | :--- | :--- |
-| **Admin** | `SystemAdmin` | Global (All Clusters) | Full, unrestricted administrative access across the cluster, all topics, consumer groups, and cluster configurations. |
-| **Resource Manager** | `ResourceOwner` | Team Prefix (`team-<x>-*`) | Manages team topics: can create, delete, configure topics, reset consumer group offsets, produce and consume messages. |
-| **DeveloperWrite (Writer)** | `DeveloperWrite` | Team Prefix (`team-<x>-*`) | Can produce messages and query topic metadata for team-owned topics only. |
-| **DeveloperRead (Reader)** | `DeveloperRead` | Team Prefix (`team-<x>-*`) | Can consume messages, query topic metadata, and participate in team consumer groups. |
+| **Admin** | `SystemAdmin` | Global (`*`) | Full, unrestricted administrative access across the entire cluster, all topics, consumer groups, and configs. |
+| **Resource Manager** | `ResourceOwner` | Team Prefix (`<team>-*`) | Full control over team topics: create, delete, alter configs, produce, consume, reset offsets. |
+| **DeveloperWrite (Writer)** | `DeveloperWrite` | Team Prefix (`<team>-*`) | Produce messages and describe topic configs for team-owned topics only. |
+| **DeveloperRead (Reader)** | `DeveloperRead` | Team Prefix (`<team>-*`) | Consume messages, query topic metadata, and join team consumer groups. |
 
 ---
 
-## Detailed Action Matrix
+## 2. Domain Example: Equities vs Fixed Income (FI)
 
-| Action / Operation | Admin | Team A Manager | Team A Writer | Team A Reader | Team B Member |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Create `team-a-*` Topic** | ✅ Allow | ✅ Allow | ❌ Deny | ❌ Deny | ❌ Deny |
-| **Delete `team-a-*` Topic** | ✅ Allow | ✅ Allow | ❌ Deny | ❌ Deny | ❌ Deny |
-| **Alter Config `team-a-*`** | ✅ Allow | ✅ Allow | ❌ Deny | ❌ Deny | ❌ Deny |
-| **Produce to `team-a-*`** | ✅ Allow | ✅ Allow | ✅ Allow | ❌ Deny | ❌ Deny |
-| **Consume from `team-a-*`** | ✅ Allow | ✅ Allow | ❌ Deny | ✅ Allow | ❌ Deny |
-| **Join `team-a-*` Consumer Group** | ✅ Allow | ✅ Allow | ❌ Deny | ✅ Allow | ❌ Deny |
-| **Reset Offsets `team-a-*`** | ✅ Allow | ✅ Allow | ❌ Deny | ✅ Allow | ❌ Deny |
-| **Produce to `team-b-*`** | ✅ Allow | ❌ Deny | ❌ Deny | ❌ Deny | Depends on B Role |
-| **Consume from `team-b-*`** | ✅ Allow | ❌ Deny | ❌ Deny | ❌ Deny | Depends on B Role |
+### Deployed Topics
+*   **Equities Team Topics**: `equities-trades`, `equities-quotes`
+*   **Fixed Income Team Topics**: `fi-bonds`, `fi-yields`
+
+### Cross-Team Permission Matrix
+
+| User / Identity | Target Resource | Requested Action | OPA Decision | Confluent RBAC Equivalent |
+| :--- | :--- | :--- | :---: | :--- |
+| **Equities Reader** | `equities-trades` | `READ` (Consume) | ✅ **ALLOW** | `DeveloperRead` on `equities-*` |
+| **Equities Reader** | `equities-trades` | `WRITE` (Produce) | ❌ **DENY** | Read-only constraint enforced |
+| **Equities Reader** | `fi-bonds` | `READ` (Consume) | ❌ **DENY** | Team isolation enforced |
+| **Equities Writer** | `equities-trades` | `WRITE` (Produce) | ✅ **ALLOW** | `DeveloperWrite` on `equities-*` |
+| **Equities Writer** | `equities-trades` | `DELETE` (Delete) | ❌ **DENY** | Delete restricted to Resource Manager |
+| **Equities Writer** | `fi-yields` | `WRITE` (Produce) | ❌ **DENY** | Team isolation enforced |
+| **Equities Manager**| `equities-swaps` | `CREATE` (New Topic) | ✅ **ALLOW** | `ResourceOwner` topic lifecycle |
+| **Equities Manager**| `equities-trades` | `ALTER_CONFIGS` | ✅ **ALLOW** | `ResourceOwner` topic alteration |
+| **Equities Manager**| `fi-bonds` | `ALTER_CONFIGS` | ❌ **DENY** | Team isolation enforced |
+| **FI Reader** | `fi-bonds` | `READ` (Consume) | ✅ **ALLOW** | `DeveloperRead` on `fi-*` |
+| **FI Reader** | `equities-quotes` | `READ` (Consume) | ❌ **DENY** | Team isolation enforced |
+| **FI Writer** | `fi-yields` | `WRITE` (Produce) | ✅ **ALLOW** | `DeveloperWrite` on `fi-*` |
+| **FI Writer** | `equities-trades` | `WRITE` (Produce) | ❌ **DENY** | Team isolation enforced |
+| **System Admin** | `equities-trades` | `WRITE` (Produce) | ✅ **ALLOW** | `SystemAdmin` cluster oversight |
+| **System Admin** | `fi-bonds` | `WRITE` (Produce) | ✅ **ALLOW** | `SystemAdmin` cluster oversight |
+| **System Admin** | `fi-yields` | `DELETE` (Delete) | ✅ **ALLOW** | `SystemAdmin` cluster oversight |
 
 ---
 
-## Entra ID (Azure AD) Group Mapping
+## 3. How to Run the Verification Test Suite
 
-In production, user group memberships are extracted automatically from the Azure Entra ID OAuth 2.0 JWT token (`groups` claim):
+Run the automated Domain RBAC test script:
 
-| Entra ID Security Group | Mapped OPA Role | Target Scope |
-| :--- | :--- | :--- |
-| `Kafka_Admins` | `Admin` | Cluster-wide |
-| `TeamA_ResourceManagers` | `Resource Manager` | `team-a-*` |
-| `TeamA_Writers` | `DeveloperWrite` | `team-a-*` |
-| `TeamA_Readers` | `DeveloperRead` | `team-a-*` |
-| `TeamB_ResourceManagers` | `Resource Manager` | `team-b-*` |
-| `TeamB_Writers` | `DeveloperWrite` | `team-b-*` |
-| `TeamB_Readers` | `DeveloperRead` | `team-b-*` |
-
-> [!TIP]
-> **Zero Kafka ACL Administration Overhead**: Because roles are bound to Azure Entra ID Security Groups, onboarding a new team member only requires adding their Azure account to the respective Entra ID group in the Azure portal. No manual Kafka ACL commands or broker restarts are needed!
+```bash
+python3 ./scripts/test-equities-fi-rbac.py
+```

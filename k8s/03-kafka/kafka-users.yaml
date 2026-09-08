@@ -31,7 +31,7 @@ spec:
 apiVersion: kafka.strimzi.io/v1
 kind: KafkaUser
 metadata:
-  name: team-a-manager
+  name: equities-manager
   namespace: kafka-enterprise
   labels:
     strimzi.io/cluster: enterprise-kafka
@@ -43,95 +43,13 @@ spec:
     acls:
       - resource:
           type: topic
-          name: "team-a-"
+          name: "equities-"
           patternType: prefix
         operations:
           - All
       - resource:
           type: group
-          name: "team-a-"
-          patternType: prefix
-        operations:
-          - All
-      - resource:
-          type: cluster
-        operations:
-          - Create
-          - Describe
----
-apiVersion: kafka.strimzi.io/v1
-kind: KafkaUser
-metadata:
-  name: team-a-writer
-  namespace: kafka-enterprise
-  labels:
-    strimzi.io/cluster: enterprise-kafka
-spec:
-  authentication:
-    type: scram-sha-512
-  authorization:
-    type: simple
-    acls:
-      - resource:
-          type: topic
-          name: "team-a-"
-          patternType: prefix
-        operations:
-          - Write
-          - Describe
-          - DescribeConfigs
----
-apiVersion: kafka.strimzi.io/v1
-kind: KafkaUser
-metadata:
-  name: team-a-reader
-  namespace: kafka-enterprise
-  labels:
-    strimzi.io/cluster: enterprise-kafka
-spec:
-  authentication:
-    type: scram-sha-512
-  authorization:
-    type: simple
-    acls:
-      - resource:
-          type: topic
-          name: "team-a-"
-          patternType: prefix
-        operations:
-          - Read
-          - Describe
-          - DescribeConfigs
-      - resource:
-          type: group
-          name: "team-a-"
-          patternType: prefix
-        operations:
-          - Read
-          - Describe
----
-apiVersion: kafka.strimzi.io/v1
-kind: KafkaUser
-metadata:
-  name: team-b-manager
-  namespace: kafka-enterprise
-  labels:
-    strimzi.io/cluster: enterprise-kafka
-spec:
-  authentication:
-    type: scram-sha-512
-  authorization:
-    type: simple
-    acls:
-      - resource:
-          type: topic
-          name: "team-b-"
-          patternType: prefix
-        operations:
-          - All
-      - resource:
-          type: group
-          name: "team-b-"
+          name: "equities-"
           patternType: prefix
         operations:
           - All
@@ -144,7 +62,7 @@ spec:
 apiVersion: kafka.strimzi.io/v1
 kind: KafkaUser
 metadata:
-  name: team-b-writer
+  name: equities-writer
   namespace: kafka-enterprise
   labels:
     strimzi.io/cluster: enterprise-kafka
@@ -156,7 +74,7 @@ spec:
     acls:
       - resource:
           type: topic
-          name: "team-b-"
+          name: "equities-"
           patternType: prefix
         operations:
           - Write
@@ -166,7 +84,7 @@ spec:
 apiVersion: kafka.strimzi.io/v1
 kind: KafkaUser
 metadata:
-  name: team-b-reader
+  name: equities-reader
   namespace: kafka-enterprise
   labels:
     strimzi.io/cluster: enterprise-kafka
@@ -178,7 +96,7 @@ spec:
     acls:
       - resource:
           type: topic
-          name: "team-b-"
+          name: "equities-"
           patternType: prefix
         operations:
           - Read
@@ -186,7 +104,89 @@ spec:
           - DescribeConfigs
       - resource:
           type: group
-          name: "team-b-"
+          name: "equities-"
+          patternType: prefix
+        operations:
+          - Read
+          - Describe
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaUser
+metadata:
+  name: fi-manager
+  namespace: kafka-enterprise
+  labels:
+    strimzi.io/cluster: enterprise-kafka
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: "fi-"
+          patternType: prefix
+        operations:
+          - All
+      - resource:
+          type: group
+          name: "fi-"
+          patternType: prefix
+        operations:
+          - All
+      - resource:
+          type: cluster
+        operations:
+          - Create
+          - Describe
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaUser
+metadata:
+  name: fi-writer
+  namespace: kafka-enterprise
+  labels:
+    strimzi.io/cluster: enterprise-kafka
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: "fi-"
+          patternType: prefix
+        operations:
+          - Write
+          - Describe
+          - DescribeConfigs
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaUser
+metadata:
+  name: fi-reader
+  namespace: kafka-enterprise
+  labels:
+    strimzi.io/cluster: enterprise-kafka
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: "fi-"
+          patternType: prefix
+        operations:
+          - Read
+          - Describe
+          - DescribeConfigs
+      - resource:
+          type: group
+          name: "fi-"
           patternType: prefix
         operations:
           - Read

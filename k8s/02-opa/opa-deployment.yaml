@@ -7,6 +7,8 @@ data:
   kafka_authz.rego: |
     package kafka.authz
 
+    import future.keywords.in
+
     default allow = false
 
     # Internal replication & cluster operator
@@ -37,168 +39,88 @@ data:
     }
     is_admin {
         p := input.request.context.principal.name
-        p == "admin"
-    }
-    is_admin {
-        p := input.request.context.principal.name
-        p == "User:admin"
-    }
-    is_admin {
-        p := input.request.context.principal.name
-        p == "kafka-admin"
+        p in ["admin", "User:admin", "kafka-admin"]
     }
 
-    # 2. Resource Manager (ResourceOwner)
+    # --- Resource Managers ---
     allow {
-        is_resource_manager
-    }
-
-    is_resource_manager {
         team := manager_team
         resource_name := input.action.resource.name
-        startswith(resource_name, concat("", [team, "-"]))
+        startswith(lower(resource_name), concat("", [team, "-"]))
         operation_allowed_for_manager(input.action.operation)
     }
 
-    manager_team = "team-a" {
-        input.request.userData.claims.groups[_] == "TeamA_ResourceManagers"
-    }
-    manager_team = "team-a" {
-        p := input.request.context.principal.name
-        p == "team-a-manager"
-    }
-    manager_team = "team-a" {
-        p := input.request.context.principal.name
-        p == "User:team-a-manager"
-    }
-
-    manager_team = "team-b" {
-        input.request.userData.claims.groups[_] == "TeamB_ResourceManagers"
-    }
-    manager_team = "team-b" {
-        p := input.request.context.principal.name
-        p == "team-b-manager"
-    }
-    manager_team = "team-b" {
-        p := input.request.context.principal.name
-        p == "User:team-b-manager"
-    }
-
-    operation_allowed_for_manager(op) { op == "READ" }
-    operation_allowed_for_manager(op) { op == "WRITE" }
-    operation_allowed_for_manager(op) { op == "CREATE" }
-    operation_allowed_for_manager(op) { op == "DELETE" }
-    operation_allowed_for_manager(op) { op == "ALTER" }
-    operation_allowed_for_manager(op) { op == "DESCRIBE" }
-    operation_allowed_for_manager(op) { op == "ALTER_CONFIGS" }
-    operation_allowed_for_manager(op) { op == "DESCRIBE_CONFIGS" }
-
-    # Allow cluster-level describe/create for resource managers
     allow {
         input.action.resource.type == "CLUSTER"
-        input.action.operation == "DESCRIBE"
-        manager_team
-    }
-    allow {
-        input.action.resource.type == "CLUSTER"
-        input.action.operation == "CREATE"
+        input.action.operation in ["DESCRIBE", "CREATE"]
         manager_team
     }
 
-    # 3. DeveloperWrite (Writer)
-    allow {
-        is_writer
+    manager_team = team {
+        group := input.request.userData.claims.groups[_]
+        endswith(group, "_ResourceManagers")
+        team := lower(substring(group, 0, count(group) - 17))
+    }
+    manager_team = team {
+        p := input.request.context.principal.name
+        clean_p := trim_prefix(p, "User:")
+        endswith(clean_p, "-manager")
+        team := lower(substring(clean_p, 0, count(clean_p) - 8))
     }
 
-    is_writer {
+    operation_allowed_for_manager(op) { op in ["READ", "WRITE", "CREATE", "DELETE", "ALTER", "DESCRIBE", "ALTER_CONFIGS", "DESCRIBE_CONFIGS"] }
+
+    # --- Writers (DeveloperWrite) ---
+    allow {
         team := writer_team
         resource_name := input.action.resource.name
-        startswith(resource_name, concat("", [team, "-"]))
+        startswith(lower(resource_name), concat("", [team, "-"]))
         operation_allowed_for_writer(input.action.operation)
     }
 
-    writer_team = "team-a" {
-        input.request.userData.claims.groups[_] == "TeamA_Writers"
+    writer_team = team {
+        group := input.request.userData.claims.groups[_]
+        endswith(group, "_Writers")
+        team := lower(substring(group, 0, count(group) - 8))
     }
-    writer_team = "team-a" {
+    writer_team = team {
         p := input.request.context.principal.name
-        p == "team-a-writer"
-    }
-    writer_team = "team-a" {
-        p := input.request.context.principal.name
-        p == "User:team-a-writer"
+        clean_p := trim_prefix(p, "User:")
+        endswith(clean_p, "-writer")
+        team := lower(substring(clean_p, 0, count(clean_p) - 7))
     }
 
-    writer_team = "team-b" {
-        input.request.userData.claims.groups[_] == "TeamB_Writers"
-    }
-    writer_team = "team-b" {
-        p := input.request.context.principal.name
-        p == "team-b-writer"
-    }
-    writer_team = "team-b" {
-        p := input.request.context.principal.name
-        p == "User:team-b-writer"
-    }
+    operation_allowed_for_writer(op) { op in ["WRITE", "DESCRIBE", "DESCRIBE_CONFIGS"] }
 
-    operation_allowed_for_writer(op) { op == "WRITE" }
-    operation_allowed_for_writer(op) { op == "DESCRIBE" }
-    operation_allowed_for_writer(op) { op == "DESCRIBE_CONFIGS" }
-
-    # 4. DeveloperRead (Reader)
+    # --- Readers (DeveloperRead) ---
     allow {
-        is_reader
-    }
-
-    is_reader {
         team := reader_team
         resource_name := input.action.resource.name
-        startswith(resource_name, concat("", [team, "-"]))
+        startswith(lower(resource_name), concat("", [team, "-"]))
         operation_allowed_for_reader(input.action.operation)
     }
 
-    is_reader {
+    allow {
         team := reader_team
         input.action.resource.type == "GROUP"
         resource_name := input.action.resource.name
-        startswith(resource_name, concat("", [team, "-"]))
-        input.action.operation == "READ"
-    }
-    is_reader {
-        team := reader_team
-        input.action.resource.type == "GROUP"
-        resource_name := input.action.resource.name
-        startswith(resource_name, concat("", [team, "-"]))
-        input.action.operation == "DESCRIBE"
+        startswith(lower(resource_name), concat("", [team, "-"]))
+        input.action.operation in ["READ", "DESCRIBE"]
     }
 
-    reader_team = "team-a" {
-        input.request.userData.claims.groups[_] == "TeamA_Readers"
+    reader_team = team {
+        group := input.request.userData.claims.groups[_]
+        endswith(group, "_Readers")
+        team := lower(substring(group, 0, count(group) - 8))
     }
-    reader_team = "team-a" {
+    reader_team = team {
         p := input.request.context.principal.name
-        p == "team-a-reader"
-    }
-    reader_team = "team-a" {
-        p := input.request.context.principal.name
-        p == "User:team-a-reader"
+        clean_p := trim_prefix(p, "User:")
+        endswith(clean_p, "-reader")
+        team := lower(substring(clean_p, 0, count(clean_p) - 7))
     }
 
-    reader_team = "team-b" {
-        input.request.userData.claims.groups[_] == "TeamB_Readers"
-    }
-    reader_team = "team-b" {
-        p := input.request.context.principal.name
-        p == "team-b-reader"
-    }
-    reader_team = "team-b" {
-        p := input.request.context.principal.name
-        p == "User:team-b-reader"
-    }
-
-    operation_allowed_for_reader(op) { op == "READ" }
-    operation_allowed_for_reader(op) { op == "DESCRIBE" }
-    operation_allowed_for_reader(op) { op == "DESCRIBE_CONFIGS" }
+    operation_allowed_for_reader(op) { op in ["READ", "DESCRIBE", "DESCRIBE_CONFIGS"] }
 ---
 apiVersion: apps/v1
 kind: Deployment
