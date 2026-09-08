@@ -1,0 +1,56 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: team-a-orders
+  namespace: kafka-enterprise
+  labels:
+    strimzi.io/cluster: enterprise-kafka
+    team: team-a
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+    segment.bytes: 1073741824
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: team-a-payments
+  namespace: kafka-enterprise
+  labels:
+    strimzi.io/cluster: enterprise-kafka
+    team: team-a
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: team-b-inventory
+  namespace: kafka-enterprise
+  labels:
+    strimzi.io/cluster: enterprise-kafka
+    team: team-b
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: team-b-shipments
+  namespace: kafka-enterprise
+  labels:
+    strimzi.io/cluster: enterprise-kafka
+    team: team-b
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000

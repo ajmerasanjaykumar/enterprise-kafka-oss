@@ -1,0 +1,18 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: enterprise-kafka
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 30080
+    hostPort: 8080
+    protocol: TCP
+  - containerPort: 30092
+    hostPort: 9092
+    protocol: TCP
+  - containerPort: 30094
+    hostPort: 9094
+    protocol: TCP
+  - containerPort: 30181
+    hostPort: 8181
+    protocol: TCP

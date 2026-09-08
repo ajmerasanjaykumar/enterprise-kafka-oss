@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafbat-ui-config
+  namespace: kafka-enterprise
+data:
+  config.yml: |
+    kafka:
+      clusters:
+        - name: enterprise-kafka
+          bootstrapServers: enterprise-kafka-kafka-bootstrap.kafka-enterprise.svc.cluster.local:9092
+    auth:
+      type: LOGIN_FORM
+      user:
+        users:
+          - username: admin
+            password: "{noop}admin123"

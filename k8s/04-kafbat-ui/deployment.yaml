@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafbat-ui
+  namespace: kafka-enterprise
+  labels:
+    app: kafbat-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafbat-ui
+  template:
+    metadata:
+      labels:
+        app: kafbat-ui
+    spec:
+      containers:
+      - name: kafbat-ui
+        image: provectuslabs/kafka-ui:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+          value: /etc/kafbat/config.yml
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/kafbat
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 20
+          periodSeconds: 15
+      volumes:
+      - name: config-volume
+        configMap:
+          name: kafbat-ui-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafbat-ui
+  namespace: kafka-enterprise
+spec:
+  type: NodePort
+  selector:
+    app: kafbat-ui
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30080
+    name: http
