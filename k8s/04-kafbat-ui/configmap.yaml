@@ -31,8 +31,14 @@ data:
             - enterprise-kafka
           subjects:
             - provider: oauth
+              type: role
+              value: "Kafka_Admins"
+            - provider: oauth
               type: group
               value: "Kafka_Admins"
+            - provider: oauth
+              type: user
+              value: "admin"
           permissions:
             - resource: topic
               value: ".*"
@@ -45,8 +51,14 @@ data:
             - enterprise-kafka
           subjects:
             - provider: oauth
+              type: role
+              value: "Equities_Team"
+            - provider: oauth
               type: group
               value: "Equities_Team"
+            - provider: oauth
+              type: user
+              value: "equities-user"
           permissions:
             - resource: clusterconfig
               actions: [view]
@@ -61,6 +73,12 @@ data:
             - provider: oauth
               type: group
               value: "FI_Team"
+            - provider: oauth
+              type: role
+              value: "FI_Team"
+            - provider: oauth
+              type: user
+              value: "fi-user"
           permissions:
             - resource: clusterconfig
               actions: [view]
