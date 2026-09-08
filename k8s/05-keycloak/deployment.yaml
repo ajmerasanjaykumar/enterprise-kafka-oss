@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: kafka-enterprise
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+      - name: keycloak
+        image: quay.io/keycloak/keycloak:24.0.1
+        args:
+        - "start-dev"
+        - "--import-realm"
+        - "--http-port=8080"
+        - "--hostname-strict=false"
+        env:
+        - name: KEYCLOAK_ADMIN
+          value: admin
+        - name: KEYCLOAK_ADMIN_PASSWORD
+          value: admin123
+        - name: JAVA_OPTS_APPEND
+          value: "-Xms256m -Xmx512m -XX:MaxMetaspaceSize=256m"
+        resources:
+          requests:
+            memory: "384Mi"
+            cpu: "200m"
+          limits:
+            memory: "768Mi"
+            cpu: "1000m"
+        ports:
+        - containerPort: 8080
+          name: http
+        volumeMounts:
+        - name: realm-volume
+          mountPath: /opt/keycloak/data/import
+        readinessProbe:
+          httpGet:
+            path: /realms/enterprise-kafka
+            port: 8080
+          initialDelaySeconds: 90
+          periodSeconds: 5
+          failureThreshold: 10
+        livenessProbe:
+          httpGet:
+            path: /realms/enterprise-kafka
+            port: 8080
+          initialDelaySeconds: 120
+          periodSeconds: 10
+          failureThreshold: 10
+      volumes:
+      - name: realm-volume
+        configMap:
+          name: keycloak-realm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: kafka-enterprise
+spec:
+  type: NodePort
+  selector:
+    app: keycloak
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30081
+    name: http

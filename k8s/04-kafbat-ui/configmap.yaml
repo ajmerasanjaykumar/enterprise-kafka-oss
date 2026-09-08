@@ -6,9 +6,64 @@ metadata:
 data:
   config.yml: |
     auth:
-      type: LOGIN_FORM
-    spring:
-      security:
-        user:
-          name: admin
-          password: admin123
+      type: OAUTH2
+      oauth2:
+        client:
+          keycloak:
+            provider: keycloak
+            client-id: kafka-ui
+            client-secret: kafka-ui-secret
+            issuer-uri: http://localhost:8081/realms/enterprise-kafka
+            user-name-attribute: preferred_username
+            scope:
+              - openid
+              - profile
+              - roles
+              - email
+            custom-params:
+              type: keycloak
+              roles-field: groups
+
+    rbac:
+      roles:
+        - name: AdminRole
+          clusters:
+            - enterprise-kafka
+          subjects:
+            - provider: oauth
+              type: group
+              value: "Kafka_Admins"
+          permissions:
+            - resource: topic
+              value: ".*"
+              actions: [all]
+            - resource: clusterconfig
+              actions: [all]
+
+        - name: EquitiesRole
+          clusters:
+            - enterprise-kafka
+          subjects:
+            - provider: oauth
+              type: group
+              value: "Equities_Team"
+          permissions:
+            - resource: clusterconfig
+              actions: [view]
+            - resource: topic
+              value: "equities-.*"
+              actions: [all]
+
+        - name: FIRole
+          clusters:
+            - enterprise-kafka
+          subjects:
+            - provider: oauth
+              type: group
+              value: "FI_Team"
+          permissions:
+            - resource: clusterconfig
+              actions: [view]
+            - resource: topic
+              value: "fi-.*"
+              actions: [all]

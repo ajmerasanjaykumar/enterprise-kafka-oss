@@ -16,6 +16,9 @@ spec:
         app: kafbat-ui
     spec:
       containers:
+      - name: keycloak-proxy
+        image: alpine/socat:latest
+        args: ["TCP-LISTEN:8081,fork,reuseaddr", "TCP:keycloak.kafka-enterprise.svc.cluster.local:8080"]
       - name: kafbat-ui
         image: provectuslabs/kafka-ui:latest
         ports:
@@ -25,11 +28,23 @@ spec:
         - name: SPRING_CONFIG_ADDITIONAL_LOCATION
           value: /etc/kafbat/config.yml
         - name: AUTH_TYPE
-          value: LOGIN_FORM
-        - name: SPRING_SECURITY_USER_NAME
-          value: admin
-        - name: SPRING_SECURITY_USER_PASSWORD
-          value: admin123
+          value: OAUTH2
+        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_PROVIDER
+          value: keycloak
+        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_CLIENT_ID
+          value: kafka-ui
+        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_CLIENT_SECRET
+          value: kafka-ui-secret
+        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_ISSUER_URI
+          value: http://localhost:8081/realms/enterprise-kafka
+        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_USER_NAME_ATTRIBUTE
+          value: preferred_username
+        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_SCOPE
+          value: openid,profile,roles,email
+        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_CUSTOM_PARAMS_TYPE
+          value: keycloak
+        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_CUSTOM_PARAMS_ROLES_FIELD
+          value: groups
         - name: KAFKA_CLUSTERS_0_NAME
           value: enterprise-kafka
         - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
@@ -47,14 +62,12 @@ spec:
         - name: config-volume
           mountPath: /etc/kafbat
         readinessProbe:
-          httpGet:
-            path: /actuator/health
+          tcpSocket:
             port: 8080
           initialDelaySeconds: 15
           periodSeconds: 10
         livenessProbe:
-          httpGet:
-            path: /actuator/health
+          tcpSocket:
             port: 8080
           initialDelaySeconds: 20
           periodSeconds: 15
