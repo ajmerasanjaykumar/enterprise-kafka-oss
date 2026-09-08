@@ -11,7 +11,8 @@ data:
           bootstrapServers: enterprise-kafka-kafka-bootstrap.kafka-enterprise.svc.cluster.local:9092
     auth:
       type: LOGIN_FORM
-      user:
-        users:
-          - username: admin
-            password: "{noop}admin123"
+    spring:
+      security:
+        user:
+          name: admin
+          password: admin123

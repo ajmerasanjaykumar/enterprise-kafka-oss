@@ -24,6 +24,12 @@ spec:
         env:
         - name: SPRING_CONFIG_ADDITIONAL_LOCATION
           value: /etc/kafbat/config.yml
+        - name: AUTH_TYPE
+          value: LOGIN_FORM
+        - name: SPRING_SECURITY_USER_NAME
+          value: admin
+        - name: SPRING_SECURITY_USER_PASSWORD
+          value: admin123
         volumeMounts:
         - name: config-volume
           mountPath: /etc/kafbat
