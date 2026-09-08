@@ -30,6 +30,19 @@ spec:
           value: admin
         - name: SPRING_SECURITY_USER_PASSWORD
           value: admin123
+        - name: KAFKA_CLUSTERS_0_NAME
+          value: enterprise-kafka
+        - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+          value: enterprise-kafka-kafka-bootstrap.kafka-enterprise.svc.cluster.local:9095
+        - name: KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL
+          value: SASL_PLAINTEXT
+        - name: KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM
+          value: SCRAM-SHA-512
+        - name: KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG
+          valueFrom:
+            secretKeyRef:
+              name: admin
+              key: sasl.jaas.config
         volumeMounts:
         - name: config-volume
           mountPath: /etc/kafbat

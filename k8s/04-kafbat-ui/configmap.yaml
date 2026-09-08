@@ -5,10 +5,6 @@ metadata:
   namespace: kafka-enterprise
 data:
   config.yml: |
-    kafka:
-      clusters:
-        - name: enterprise-kafka
-          bootstrapServers: enterprise-kafka-kafka-bootstrap.kafka-enterprise.svc.cluster.local:9092
     auth:
       type: LOGIN_FORM
     spring:
