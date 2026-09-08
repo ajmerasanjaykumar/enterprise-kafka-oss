@@ -23,6 +23,10 @@ spec:
         - "--import-realm"
         - "--http-port=8080"
         - "--hostname-strict=false"
+        - "-Dkeycloak.migration.action=import"
+        - "-Dkeycloak.migration.provider=singleFile"
+        - "-Dkeycloak.migration.file=/opt/keycloak/data/import/realm-export.json"
+        - "-Dkeycloak.migration.strategy=OVERWRITE_EXISTING"
         env:
         - name: KEYCLOAK_ADMIN
           value: admin

@@ -23,20 +23,57 @@ data:
       "users": [
         {
           "username": "admin",
+          "firstName": "Admin",
+          "lastName": "User",
+          "email": "admin@enterprise.local",
+          "emailVerified": true,
           "enabled": true,
-          "credentials": [{ "type": "password", "value": "admin123" }],
+          "requiredActions": [],
+          "credentials": [{ "type": "password", "value": "admin123", "temporary": false }],
           "groups": ["Kafka_Admins"]
         },
         {
           "username": "equities-user",
+          "firstName": "Equities",
+          "lastName": "User",
+          "email": "equities-user@enterprise.local",
+          "emailVerified": true,
           "enabled": true,
-          "credentials": [{ "type": "password", "value": "equities123" }],
+          "requiredActions": [],
+          "credentials": [{ "type": "password", "value": "equities123", "temporary": false }],
+          "groups": ["Equities_Team"]
+        },
+        {
+          "username": "equities",
+          "firstName": "Equities",
+          "lastName": "Team",
+          "email": "equities@enterprise.local",
+          "emailVerified": true,
+          "enabled": true,
+          "requiredActions": [],
+          "credentials": [{ "type": "password", "value": "equities123", "temporary": false }],
           "groups": ["Equities_Team"]
         },
         {
           "username": "fi-user",
+          "firstName": "FI",
+          "lastName": "User",
+          "email": "fi-user@enterprise.local",
+          "emailVerified": true,
           "enabled": true,
-          "credentials": [{ "type": "password", "value": "fi123" }],
+          "requiredActions": [],
+          "credentials": [{ "type": "password", "value": "fi123", "temporary": false }],
+          "groups": ["FI_Team"]
+        },
+        {
+          "username": "fi",
+          "firstName": "FI",
+          "lastName": "Team",
+          "email": "fi@enterprise.local",
+          "emailVerified": true,
+          "enabled": true,
+          "requiredActions": [],
+          "credentials": [{ "type": "password", "value": "fi123", "temporary": false }],
           "groups": ["FI_Team"]
         }
       ],
@@ -59,8 +96,8 @@ data:
                 "full.path": "false",
                 "id.token.claim": "true",
                 "access.token.claim": "true",
-                "claim.name": "groups",
-                "userinfo.token.claim": "true"
+                "userinfo.token.claim": "true",
+                "claim.name": "groups"
               }
             }
           ]
