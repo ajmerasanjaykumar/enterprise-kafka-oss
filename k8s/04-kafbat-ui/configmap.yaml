@@ -73,8 +73,6 @@ data:
             - resource: topic
               value: "equities-.*"
               actions: [all]
-            - resource: acl
-              actions: [view]
 
         - name: FIRole
           clusters:
@@ -98,5 +96,3 @@ data:
             - resource: topic
               value: "fi-.*"
               actions: [all]
-            - resource: acl
-              actions: [view]

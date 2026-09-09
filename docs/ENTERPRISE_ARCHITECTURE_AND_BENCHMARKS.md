@@ -110,11 +110,14 @@ Security is enforced at two distinct layers:
 
 | User Account | Role / Group | Permitted Topic Scope | Permissions | ACL Visibility | Cluster Config |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`admin`** | `Kafka_Admins` | `.*` (All 11 Topics) | **ALL** (Create, Delete, Read, Write, Alter) | **Full (Edit & View)** | **ALL** |
-| **`equities`** | `Equities_Team` | `equities-.*` (Only Equities) | **ALL** on Equities topics | **View Only** | **View Only** |
-| **`fi`** | `FI_Team` | `fi-.*` (Only Fixed Income) | **ALL** on Fixed Income topics | **View Only** | **View Only** |
+| **`admin`** | `Kafka_Admins` | `.*` (All 11 Topics) | **ALL** (Create, Delete, Read, Write, Alter) | **Full (Edit & View 51 Rules)** | **ALL** |
+| **`equities`** | `Equities_Team` | `equities-.*` (Only Equities) | **ALL** on Equities topics | **None (Hidden / 403 Forbidden)** | **View Only** |
+| **`fi`** | `FI_Team` | `fi-.*` (Only Fixed Income) | **ALL** on Fixed Income topics | **None (Hidden / 403 Forbidden)** | **View Only** |
 
 ### Verified RBAC Isolation Behavior
+* **Strict Multi-Tenant Privacy**:
+  * Because Kafka ACLs represent global cluster-wide security bindings, non-admin domain teams (`fi` and `equities`) have **no ACL access**.
+  * Any direct navigation to `/ui/clusters/enterprise-kafka/acl` or API call to `/api/clusters/enterprise-kafka/acls` triggers an instant **HTTP 403 Forbidden** toast, protecting cross-team security definitions.
 * When logged in as **`equities`**:
   * The user sees only `equities-trades`, `equities-orders`, and `equities-quotes`.
   * Attempting to browse, produce to, or consume from `fi-trades` immediately returns **HTTP 403 Forbidden**.
