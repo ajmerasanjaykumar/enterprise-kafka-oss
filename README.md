@@ -81,6 +81,7 @@ Run the automated RBAC verification test suite:
 │   ├── deploy-all.sh             # Run all deployment steps
 │   └── cleanup.sh                # Teardown local cluster
 └── docs/
+    ├── ENTERPRISE_ARCHITECTURE_AND_BENCHMARKS.md # Executive architecture, security & 90K benchmark report
     ├── ARCHITECTURE.md           # Mermaid diagrams & component guide
     ├── RBAC_MATRIX.md            # Detailed permission matrix
     ├── AZURE_ENTRA_SETUP.md      # Azure Entra ID / OIDC integration guide

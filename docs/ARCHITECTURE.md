@@ -1,5 +1,8 @@
 # Architecture: Open-Source Enterprise Kafka Platform
 
+> **Executive & Leadership Presentation**: For the comprehensive end-to-end report detailing executive business outcomes, KRaft topology, multi-domain RBAC (Equities & FI), 10-minute retention policies, and the 90,000-message concurrent stress test, please see:  
+> 📑 **[Enterprise Architecture, Security & Performance Benchmark Report](./ENTERPRISE_ARCHITECTURE_AND_BENCHMARKS.md)**
+
 This document describes the architectural components, network topologies, and security boundaries of our 100% open-source enterprise Kafka deployment.
 
 ```mermaid
