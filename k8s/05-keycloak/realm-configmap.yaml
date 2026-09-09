@@ -16,9 +16,18 @@ data:
         ]
       },
       "groups": [
-        { "name": "Kafka_Admins" },
-        { "name": "Equities_Team" },
-        { "name": "FI_Team" }
+        {
+          "name": "Kafka_Admins",
+          "realmRoles": ["Kafka_Admins"]
+        },
+        {
+          "name": "Equities_Team",
+          "realmRoles": ["Equities_Team"]
+        },
+        {
+          "name": "FI_Team",
+          "realmRoles": ["FI_Team"]
+        }
       ],
       "users": [
         {
@@ -30,6 +39,7 @@ data:
           "enabled": true,
           "requiredActions": [],
           "credentials": [{ "type": "password", "value": "admin123", "temporary": false }],
+          "realmRoles": ["Kafka_Admins"],
           "groups": ["Kafka_Admins"]
         },
         {
@@ -41,6 +51,7 @@ data:
           "enabled": true,
           "requiredActions": [],
           "credentials": [{ "type": "password", "value": "equities123", "temporary": false }],
+          "realmRoles": ["Equities_Team"],
           "groups": ["Equities_Team"]
         },
         {
@@ -52,6 +63,7 @@ data:
           "enabled": true,
           "requiredActions": [],
           "credentials": [{ "type": "password", "value": "equities123", "temporary": false }],
+          "realmRoles": ["Equities_Team"],
           "groups": ["Equities_Team"]
         },
         {
@@ -63,6 +75,7 @@ data:
           "enabled": true,
           "requiredActions": [],
           "credentials": [{ "type": "password", "value": "fi123", "temporary": false }],
+          "realmRoles": ["FI_Team"],
           "groups": ["FI_Team"]
         },
         {
@@ -74,6 +87,7 @@ data:
           "enabled": true,
           "requiredActions": [],
           "credentials": [{ "type": "password", "value": "fi123", "temporary": false }],
+          "realmRoles": ["FI_Team"],
           "groups": ["FI_Team"]
         }
       ],
@@ -98,6 +112,19 @@ data:
                 "access.token.claim": "true",
                 "userinfo.token.claim": "true",
                 "claim.name": "groups"
+              }
+            },
+            {
+              "name": "realm roles",
+              "protocol": "openid-connect",
+              "protocolMapper": "oidc-usermodel-realm-role-mapper",
+              "consentRequired": false,
+              "config": {
+                "userinfo.token.claim": "true",
+                "id.token.claim": "true",
+                "access.token.claim": "true",
+                "claim.name": "roles",
+                "multivalued": "true"
               }
             }
           ]

@@ -10,7 +10,7 @@ spec:
   partitions: 3
   replicas: 1
   config:
-    retention.ms: 604800000
+    retention.ms: 600000
 ---
 apiVersion: kafka.strimzi.io/v1
 kind: KafkaTopic
@@ -24,7 +24,35 @@ spec:
   partitions: 3
   replicas: 1
   config:
-    retention.ms: 604800000
+    retention.ms: 600000
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: equities-orders
+  namespace: kafka-enterprise
+  labels:
+    strimzi.io/cluster: enterprise-kafka
+    team: equities
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 600000
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: fi-trades
+  namespace: kafka-enterprise
+  labels:
+    strimzi.io/cluster: enterprise-kafka
+    team: fi
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 600000
 ---
 apiVersion: kafka.strimzi.io/v1
 kind: KafkaTopic
@@ -38,7 +66,21 @@ spec:
   partitions: 3
   replicas: 1
   config:
-    retention.ms: 604800000
+    retention.ms: 600000
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: fi-settlements
+  namespace: kafka-enterprise
+  labels:
+    strimzi.io/cluster: enterprise-kafka
+    team: fi
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 600000
 ---
 apiVersion: kafka.strimzi.io/v1
 kind: KafkaTopic
@@ -52,7 +94,7 @@ spec:
   partitions: 3
   replicas: 1
   config:
-    retention.ms: 604800000
+    retention.ms: 600000
 ---
 apiVersion: kafka.strimzi.io/v1
 kind: KafkaTopic
@@ -65,6 +107,22 @@ metadata:
 spec:
   partitions: 3
   replicas: 1
+  config:
+    retention.ms: 600000
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: team-a-payments
+  namespace: kafka-enterprise
+  labels:
+    strimzi.io/cluster: enterprise-kafka
+    team: team-a
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 600000
 ---
 apiVersion: kafka.strimzi.io/v1
 kind: KafkaTopic
@@ -77,3 +135,19 @@ metadata:
 spec:
   partitions: 3
   replicas: 1
+  config:
+    retention.ms: 600000
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: team-b-shipments
+  namespace: kafka-enterprise
+  labels:
+    strimzi.io/cluster: enterprise-kafka
+    team: team-b
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 600000

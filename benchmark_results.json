@@ -1,0 +1,114 @@
+{
+  "specs": {
+    "host_cpu": "Apple M1",
+    "host_ram_gb": 8.0,
+    "k8s_nodes": [
+      "NAME                             STATUS   ROLES           AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                       KERNEL-VERSION            CONTAINER-RUNTIME",
+      "enterprise-kafka-control-plane   Ready    control-plane   22h   v1.37.0   172.18.0.2    <none>        Debian GNU/Linux 13 (trixie)   7.0.12-linuxkit (arm64)   containerd://2.3.4"
+    ],
+    "kafka_api_header": "enterprise-kafka-dual-role-0.enterprise-kafka-kafka-brokers.kafka-enterprise.svc:9095 (id: 0 rack: null isFenced: false) -> (",
+    "pod_resources": "{}"
+  },
+  "runs": {
+    "1000": {
+      "producer": {
+        "equities-trades": {
+          "raw": "1000 records sent, 1858.736059 records/sec (0.91 MB/sec), 138.33 ms avg latency, 511.00 ms max latency, 139 ms 50th, 155 ms 95th, 156 ms 99th, 511 ms 99.9th.",
+          "records_per_sec": 1858.736059,
+          "mb_per_sec": 0.91,
+          "avg_latency_ms": 138.33,
+          "max_latency_ms": 511.0,
+          "p50_latency_ms": 139.0,
+          "p95_latency_ms": 155.0,
+          "p99_latency_ms": 156.0
+        },
+        "fi-trades": {
+          "raw": "1000 records sent, 1872.659176 records/sec (0.91 MB/sec), 128.35 ms avg latency, 409.00 ms max latency, 142 ms 50th, 149 ms 95th, 149 ms 99th, 409 ms 99.9th.",
+          "records_per_sec": 1872.659176,
+          "mb_per_sec": 0.91,
+          "avg_latency_ms": 128.35,
+          "max_latency_ms": 409.0,
+          "p50_latency_ms": 142.0,
+          "p95_latency_ms": 149.0,
+          "p99_latency_ms": 149.0
+        }
+      },
+      "partition_distribution": {
+        "equities-trades": {},
+        "fi-trades": {}
+      },
+      "consumer": {
+        "equities-trades": {
+          "data_consumed_mb": 0.487,
+          "mb_per_sec": 0.1359,
+          "records_consumed": 1000,
+          "records_per_sec": 279.0179,
+          "rebalance_time_ms": 3474.0,
+          "fetch_time_ms": 110.0,
+          "fetch_mb_per_sec": 4.4269,
+          "fetch_records_per_sec": 9090.9091
+        },
+        "fi-trades": {
+          "data_consumed_mb": 0.4874,
+          "mb_per_sec": 0.1341,
+          "records_consumed": 1000,
+          "records_per_sec": 275.0275,
+          "rebalance_time_ms": 3485.0,
+          "fetch_time_ms": 151.0,
+          "fetch_mb_per_sec": 3.2279,
+          "fetch_records_per_sec": 6622.5166
+        }
+      }
+    },
+    "10000": {
+      "producer": {
+        "equities-trades": {
+          "raw": "10000 records sent, 3207.184092 records/sec (1.57 MB/sec), 1075.39 ms avg latency, 2172.00 ms max latency, 833 ms 50th, 1881 ms 95th, 1926 ms 99th, 1944 ms 99.9th.",
+          "records_per_sec": 3207.184092,
+          "mb_per_sec": 1.57,
+          "avg_latency_ms": 1075.39,
+          "max_latency_ms": 2172.0,
+          "p50_latency_ms": 833.0,
+          "p95_latency_ms": 1881.0,
+          "p99_latency_ms": 1926.0
+        },
+        "fi-trades": {
+          "raw": "10000 records sent, 13210.039630 records/sec (6.45 MB/sec), 68.57 ms avg latency, 593.00 ms max latency, 68 ms 50th, 80 ms 95th, 92 ms 99th, 94 ms 99.9th.",
+          "records_per_sec": 13210.03963,
+          "mb_per_sec": 6.45,
+          "avg_latency_ms": 68.57,
+          "max_latency_ms": 593.0,
+          "p50_latency_ms": 68.0,
+          "p95_latency_ms": 80.0,
+          "p99_latency_ms": 92.0
+        }
+      },
+      "partition_distribution": {
+        "equities-trades": {},
+        "fi-trades": {}
+      },
+      "consumer": {
+        "equities-trades": {
+          "data_consumed_mb": 5.1164,
+          "mb_per_sec": 0.7588,
+          "records_consumed": 10481,
+          "records_per_sec": 1554.3527,
+          "rebalance_time_ms": 3777.0,
+          "fetch_time_ms": 2966.0,
+          "fetch_mb_per_sec": 1.725,
+          "fetch_records_per_sec": 3533.7154
+        },
+        "fi-trades": {
+          "data_consumed_mb": 5.1163,
+          "mb_per_sec": 1.3578,
+          "records_consumed": 10480,
+          "records_per_sec": 2781.3163,
+          "rebalance_time_ms": 3511.0,
+          "fetch_time_ms": 257.0,
+          "fetch_mb_per_sec": 19.9079,
+          "fetch_records_per_sec": 40778.2101
+        }
+      }
+    }
+  }
+}

@@ -25,12 +25,16 @@ spec:
         - containerPort: 8080
           name: http
         env:
+        - name: LOGGING_LEVEL_COM_PROVECTUS_KAFKA_UI
+          value: DEBUG
+        - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY
+          value: DEBUG
         - name: SPRING_CONFIG_ADDITIONAL_LOCATION
-          value: /etc/kafbat/config.yml
+          value: optional:file:/etc/kafkaui/config.yml
         - name: AUTH_TYPE
           value: OAUTH2
         - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_PROVIDER
-          value: keycloak
+          value: oauth
         - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_CLIENT_ID
           value: kafka-ui
         - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_CLIENT_SECRET
@@ -42,7 +46,7 @@ spec:
         - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_SCOPE
           value: openid,profile,roles,email
         - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_CUSTOM_PARAMS_TYPE
-          value: keycloak
+          value: oauth
         - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_CUSTOM_PARAMS_ROLES_FIELD
           value: groups
         - name: KAFKA_CLUSTERS_0_NAME
@@ -60,16 +64,16 @@ spec:
               key: sasl.jaas.config
         volumeMounts:
         - name: config-volume
-          mountPath: /etc/kafbat
+          mountPath: /etc/kafkaui
         readinessProbe:
           tcpSocket:
             port: 8080
-          initialDelaySeconds: 15
+          initialDelaySeconds: 25
           periodSeconds: 10
         livenessProbe:
           tcpSocket:
             port: 8080
-          initialDelaySeconds: 20
+          initialDelaySeconds: 30
           periodSeconds: 15
       volumes:
       - name: config-volume

@@ -1,0 +1,313 @@
+{
+  "benchmark_timestamp": "2026-09-09T17:23:06Z",
+  "system_specifications": {
+    "cpu": "Apple M1",
+    "cpu_cores": 8,
+    "ram_gb": 8.0,
+    "kafka_version": "Apache Kafka 4.3.1 (KRaft metadata mode)",
+    "k8s_distro": "Kubernetes v1.37.0 on containerd",
+    "retention_policy": "10 minutes (600,000 ms) on all topics",
+    "compression": "snappy",
+    "batch_size": "32768 bytes (32 KB)",
+    "linger_ms": "5 ms",
+    "acks": "1"
+  },
+  "parameters": {
+    "num_topics": 7,
+    "topic_records": {
+      "equities-trades": 20000,
+      "fi-trades": 20000,
+      "equities-orders": 10000,
+      "fi-settlements": 10000,
+      "equities-quotes": 10000,
+      "fi-bonds": 10000,
+      "fi-yields": 10000
+    },
+    "record_size_bytes": 512,
+    "total_planned_records": 90000,
+    "concurrent_workers": 3
+  },
+  "parallel_produce_metrics": {
+    "duration_seconds": 10.69,
+    "total_produced": 90000,
+    "total_failed": 0,
+    "aggregate_throughput_msgs_sec": 8419.1,
+    "aggregate_throughput_mb_sec": 4.11,
+    "peak_topic": "fi-yields",
+    "peak_throughput_msgs_sec": 14947.683109,
+    "per_topic_details": [
+      {
+        "topic": "equities-orders",
+        "records_target": 10000,
+        "elapsed_sec": 3.63,
+        "success": true,
+        "failed_records": 0,
+        "error_msg": "",
+        "records_sent": 10000,
+        "records_per_sec": 6684.491979,
+        "mb_per_sec": 3.26,
+        "avg_latency_ms": 456.09,
+        "max_latency_ms": 625.0,
+        "p50_latency_ms": 482.0,
+        "p95_latency_ms": 611.0,
+        "p99_latency_ms": 623.0
+      },
+      {
+        "topic": "equities-trades",
+        "records_target": 20000,
+        "elapsed_sec": 3.79,
+        "success": true,
+        "failed_records": 0,
+        "error_msg": "",
+        "records_sent": 20000,
+        "records_per_sec": 12113.870382,
+        "mb_per_sec": 5.91,
+        "avg_latency_ms": 385.05,
+        "max_latency_ms": 824.0,
+        "p50_latency_ms": 371.0,
+        "p95_latency_ms": 532.0,
+        "p99_latency_ms": 549.0
+      },
+      {
+        "topic": "fi-trades",
+        "records_target": 20000,
+        "elapsed_sec": 3.79,
+        "success": true,
+        "failed_records": 0,
+        "error_msg": "",
+        "records_sent": 20000,
+        "records_per_sec": 12187.690433,
+        "mb_per_sec": 5.95,
+        "avg_latency_ms": 504.84,
+        "max_latency_ms": 646.0,
+        "p50_latency_ms": 499.0,
+        "p95_latency_ms": 616.0,
+        "p99_latency_ms": 644.0
+      },
+      {
+        "topic": "fi-bonds",
+        "records_target": 10000,
+        "elapsed_sec": 4.09,
+        "success": true,
+        "failed_records": 0,
+        "error_msg": "",
+        "records_sent": 10000,
+        "records_per_sec": 5730.659026,
+        "mb_per_sec": 2.8,
+        "avg_latency_ms": 417.0,
+        "max_latency_ms": 975.0,
+        "p50_latency_ms": 386.0,
+        "p95_latency_ms": 595.0,
+        "p99_latency_ms": 608.0
+      },
+      {
+        "topic": "equities-quotes",
+        "records_target": 10000,
+        "elapsed_sec": 4.09,
+        "success": true,
+        "failed_records": 0,
+        "error_msg": "",
+        "records_sent": 10000,
+        "records_per_sec": 5662.514156,
+        "mb_per_sec": 2.76,
+        "avg_latency_ms": 439.31,
+        "max_latency_ms": 1164.0,
+        "p50_latency_ms": 373.0,
+        "p95_latency_ms": 591.0,
+        "p99_latency_ms": 615.0
+      },
+      {
+        "topic": "fi-settlements",
+        "records_target": 10000,
+        "elapsed_sec": 4.25,
+        "success": true,
+        "failed_records": 0,
+        "error_msg": "",
+        "records_sent": 10000,
+        "records_per_sec": 5470.459519,
+        "mb_per_sec": 2.67,
+        "avg_latency_ms": 726.62,
+        "max_latency_ms": 918.0,
+        "p50_latency_ms": 780.0,
+        "p95_latency_ms": 895.0,
+        "p99_latency_ms": 902.0
+      },
+      {
+        "topic": "fi-yields",
+        "records_target": 10000,
+        "elapsed_sec": 2.81,
+        "success": true,
+        "failed_records": 0,
+        "error_msg": "",
+        "records_sent": 10000,
+        "records_per_sec": 14947.683109,
+        "mb_per_sec": 7.3,
+        "avg_latency_ms": 124.36,
+        "max_latency_ms": 477.0,
+        "p50_latency_ms": 118.0,
+        "p95_latency_ms": 148.0,
+        "p99_latency_ms": 154.0
+      }
+    ],
+    "partition_distribution": {
+      "equities-trades": {
+        "0": 6736,
+        "1": 6623,
+        "2": 6641
+      },
+      "fi-trades": {
+        "0": 6594,
+        "1": 6686,
+        "2": 6720
+      },
+      "equities-orders": {
+        "0": 3349,
+        "1": 3190,
+        "2": 3461
+      },
+      "fi-settlements": {
+        "0": 4000,
+        "1": 2679,
+        "2": 3321
+      },
+      "equities-quotes": {
+        "0": 3333,
+        "1": 3334,
+        "2": 3333
+      },
+      "fi-bonds": {
+        "0": 3324,
+        "1": 3529,
+        "2": 3147
+      },
+      "fi-yields": {
+        "0": 3441,
+        "1": 3251,
+        "2": 3308
+      }
+    }
+  },
+  "parallel_consume_metrics": {
+    "duration_seconds": 30.68,
+    "total_consumed": 90437,
+    "total_failed": 0,
+    "aggregate_throughput_msgs_sec": 2947.8,
+    "aggregate_throughput_mb_sec": 1.44,
+    "peak_topic": "fi-yields",
+    "peak_fetch_throughput_msgs_sec": 29498.5251,
+    "per_topic_details": [
+      {
+        "topic": "equities-trades",
+        "group_id": "stress-cg-equities-trades-1788974556",
+        "records_target": 20000,
+        "elapsed_sec": 11.77,
+        "success": true,
+        "failed_records": 0,
+        "data_consumed_mb": 9.979,
+        "mb_per_sec": 1.6292,
+        "records_consumed": 20437,
+        "records_per_sec": 3336.6531,
+        "rebalance_time_ms": 3884.0,
+        "fetch_time_ms": 2241.0,
+        "fetch_mb_per_sec": 4.4529,
+        "fetch_records_per_sec": 9119.5895
+      },
+      {
+        "topic": "equities-orders",
+        "group_id": "stress-cg-equities-orders-1788974556",
+        "records_target": 10000,
+        "elapsed_sec": 11.79,
+        "success": true,
+        "failed_records": 0,
+        "data_consumed_mb": 4.8828,
+        "mb_per_sec": 0.8391,
+        "records_consumed": 10000,
+        "records_per_sec": 1718.5083,
+        "rebalance_time_ms": 3881.0,
+        "fetch_time_ms": 1938.0,
+        "fetch_mb_per_sec": 2.5195,
+        "fetch_records_per_sec": 5159.9587
+      },
+      {
+        "topic": "fi-trades",
+        "group_id": "stress-cg-fi-trades-1788974556",
+        "records_target": 20000,
+        "elapsed_sec": 12.04,
+        "success": true,
+        "failed_records": 0,
+        "data_consumed_mb": 9.7656,
+        "mb_per_sec": 1.6022,
+        "records_consumed": 20000,
+        "records_per_sec": 3281.3782,
+        "rebalance_time_ms": 3881.0,
+        "fetch_time_ms": 2214.0,
+        "fetch_mb_per_sec": 4.4109,
+        "fetch_records_per_sec": 9033.4237
+      },
+      {
+        "topic": "fi-settlements",
+        "group_id": "stress-cg-fi-settlements-1788974556",
+        "records_target": 10000,
+        "elapsed_sec": 10.65,
+        "success": true,
+        "failed_records": 0,
+        "data_consumed_mb": 4.8828,
+        "mb_per_sec": 0.8654,
+        "records_consumed": 10000,
+        "records_per_sec": 1772.4211,
+        "rebalance_time_ms": 4533.0,
+        "fetch_time_ms": 1109.0,
+        "fetch_mb_per_sec": 4.4029,
+        "fetch_records_per_sec": 9017.1326
+      },
+      {
+        "topic": "equities-quotes",
+        "group_id": "stress-cg-equities-quotes-1788974556",
+        "records_target": 10000,
+        "elapsed_sec": 10.64,
+        "success": true,
+        "failed_records": 0,
+        "data_consumed_mb": 4.8828,
+        "mb_per_sec": 0.8713,
+        "records_consumed": 10000,
+        "records_per_sec": 1784.4397,
+        "rebalance_time_ms": 4533.0,
+        "fetch_time_ms": 1071.0,
+        "fetch_mb_per_sec": 4.5591,
+        "fetch_records_per_sec": 9337.0682
+      },
+      {
+        "topic": "fi-bonds",
+        "group_id": "stress-cg-fi-bonds-1788974556",
+        "records_target": 10000,
+        "elapsed_sec": 10.39,
+        "success": true,
+        "failed_records": 0,
+        "data_consumed_mb": 4.8828,
+        "mb_per_sec": 0.8613,
+        "records_consumed": 10000,
+        "records_per_sec": 1763.9795,
+        "rebalance_time_ms": 4536.0,
+        "fetch_time_ms": 1133.0,
+        "fetch_mb_per_sec": 4.3096,
+        "fetch_records_per_sec": 8826.1253
+      },
+      {
+        "topic": "fi-yields",
+        "group_id": "stress-cg-fi-yields-1788974556",
+        "records_target": 10000,
+        "elapsed_sec": 8.25,
+        "success": true,
+        "failed_records": 0,
+        "data_consumed_mb": 4.8828,
+        "mb_per_sec": 1.1295,
+        "records_consumed": 10000,
+        "records_per_sec": 2313.2084,
+        "rebalance_time_ms": 3984.0,
+        "fetch_time_ms": 339.0,
+        "fetch_mb_per_sec": 14.4036,
+        "fetch_records_per_sec": 29498.5251
+      }
+    ]
+  }
+}

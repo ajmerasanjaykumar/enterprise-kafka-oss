@@ -10,7 +10,7 @@ data:
       oauth2:
         client:
           keycloak:
-            provider: keycloak
+            provider: oauth
             client-id: kafka-ui
             client-secret: kafka-ui-secret
             issuer-uri: http://localhost:8081/realms/enterprise-kafka
@@ -21,7 +21,7 @@ data:
               - roles
               - email
             custom-params:
-              type: keycloak
+              type: oauth
               roles-field: groups
 
     rbac:
@@ -32,18 +32,23 @@ data:
           subjects:
             - provider: oauth
               type: role
-              value: "Kafka_Admins"
+              value: Kafka_Admins
             - provider: oauth
               type: group
-              value: "Kafka_Admins"
+              value: Kafka_Admins
             - provider: oauth
               type: user
-              value: "admin"
+              value: admin
           permissions:
             - resource: topic
               value: ".*"
               actions: [all]
             - resource: clusterconfig
+              actions: [all]
+            - resource: consumer
+              value: ".*"
+              actions: [all]
+            - resource: acl
               actions: [all]
 
         - name: EquitiesRole
@@ -52,36 +57,46 @@ data:
           subjects:
             - provider: oauth
               type: role
-              value: "Equities_Team"
+              value: Equities_Team
             - provider: oauth
               type: group
-              value: "Equities_Team"
+              value: Equities_Team
             - provider: oauth
               type: user
-              value: "equities-user"
+              value: equities
+            - provider: oauth
+              type: user
+              value: equities-user
           permissions:
             - resource: clusterconfig
               actions: [view]
             - resource: topic
               value: "equities-.*"
               actions: [all]
+            - resource: acl
+              actions: [view]
 
         - name: FIRole
           clusters:
             - enterprise-kafka
           subjects:
             - provider: oauth
-              type: group
-              value: "FI_Team"
-            - provider: oauth
               type: role
-              value: "FI_Team"
+              value: FI_Team
+            - provider: oauth
+              type: group
+              value: FI_Team
             - provider: oauth
               type: user
-              value: "fi-user"
+              value: fi
+            - provider: oauth
+              type: user
+              value: fi-user
           permissions:
             - resource: clusterconfig
               actions: [view]
             - resource: topic
               value: "fi-.*"
               actions: [all]
+            - resource: acl
+              actions: [view]
