@@ -1,0 +1,9 @@
+{
+  "name": "banking-audit-file-sink",
+  "config": {
+    "connector.class": "org.apache.kafka.connect.file.FileStreamSinkConnector",
+    "tasks.max": "1",
+    "topics": "banking-payments,fraud-alerts",
+    "file": "/tmp/banking-audit-stream.log"
+  }
+}

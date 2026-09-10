@@ -6,6 +6,7 @@ A production-ready, open-source enterprise Apache Kafka platform built on Kubern
 
 *   **Zero License Cost**: 100% free and open source (Apache 2.0 / CNCF).
 *   **Confluent Control Center Alternative**: Powered by **Kafbat UI** for managing topics, browsing messages, inspecting consumer lag, and producing data.
+*   **Schema Registry & Data Contracts**: Powered by **Karapace** (100% OSS Apache 2.0 by Aiven) with Avro/Protobuf validation, schema evolution, and Kafbat UI auto-deserialization.
 *   **Enterprise RBAC & Team Isolation**:
     *   **Admin (SystemAdmin)**: Full cluster oversight.
     *   **Resource Manager (ResourceOwner)**: Scoped topic lifecycle & configuration for their team.
@@ -49,8 +50,16 @@ Open your browser and navigate to:
 
 ---
 
-## Testing RBAC Enforcement
+## Testing & Verifying Banking Capabilities
 
+### 1. Test Schema Registry & Data Contracts
+Run the automated banking data contract and schema evolution test suite:
+
+```bash
+./scripts/08-test-schema-registry.sh
+```
+
+### 2. Test RBAC Enforcement
 Run the automated RBAC verification test suite:
 
 ```bash
@@ -70,7 +79,8 @@ Run the automated RBAC verification test suite:
 │   ├── 01-strimzi/               # Strimzi Operator manifests
 │   ├── 02-opa/                   # OPA deployment & Rego RBAC policies
 │   ├── 03-kafka/                 # Kafka cluster (KRaft), topics & users
-│   └── 04-kafbat-ui/             # Control Center UI deployment & config
+│   ├── 04-kafbat-ui/             # Control Center UI deployment & config
+│   └── 06-karapace/              # Karapace Schema Registry deployment & topic
 ├── scripts/
 │   ├── 01-setup-cluster.sh       # Initialize Kind cluster
 │   ├── 02-deploy-strimzi.sh      # Deploy Strimzi via Helm
@@ -78,10 +88,13 @@ Run the automated RBAC verification test suite:
 │   ├── 04-deploy-kafka.sh        # Deploy Kafka & Topics
 │   ├── 05-deploy-kafbat-ui.sh    # Deploy Kafbat UI
 │   ├── 06-test-rbac.sh           # Test RBAC security rules
+│   ├── 07-deploy-karapace.sh     # Deploy Karapace Schema Registry
+│   ├── 08-test-schema-registry.sh# Test Banking Avro data contracts & evolution
 │   ├── deploy-all.sh             # Run all deployment steps
 │   └── cleanup.sh                # Teardown local cluster
 └── docs/
-    ├── ENTERPRISE_ARCHITECTURE_AND_BENCHMARKS.md # Executive architecture, security & 90K benchmark report
+    ├── BANKING_KAFKA_PLAYGROUND_AND_EXTENSIONS.md # Full banking playground & extension guide
+    ├── ENTERPRISE_ARCHITECTURE_AND_BENCHMARKS.md # Architecture, security & 90K benchmark report
     ├── ARCHITECTURE.md           # Mermaid diagrams & component guide
     ├── RBAC_MATRIX.md            # Detailed permission matrix
     ├── AZURE_ENTRA_SETUP.md      # Azure Entra ID / OIDC integration guide

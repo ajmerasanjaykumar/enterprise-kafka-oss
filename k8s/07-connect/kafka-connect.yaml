@@ -1,0 +1,177 @@
+---
+# Lightweight Kafka Connect using the Strimzi Kafka image
+# Already present in cluster - no new image pull needed!
+# Includes built-in connectors: FileStreamSource + FileStreamSink
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-connect-config
+  namespace: kafka-enterprise
+data:
+  connect-distributed.properties: |
+    bootstrap.servers=enterprise-kafka-kafka-bootstrap.kafka-enterprise.svc.cluster.local:9092
+    group.id=enterprise-connect-cluster
+    key.converter=org.apache.kafka.connect.json.JsonConverter
+    value.converter=org.apache.kafka.connect.json.JsonConverter
+    key.converter.schemas.enable=false
+    value.converter.schemas.enable=false
+    offset.storage.topic=connect-offsets
+    offset.storage.replication.factor=1
+    offset.storage.partitions=3
+    config.storage.topic=connect-configs
+    config.storage.replication.factor=1
+    status.storage.topic=connect-status
+    status.storage.replication.factor=1
+    status.storage.partitions=3
+    rest.host.name=0.0.0.0
+    rest.port=8083
+    plugin.path=/plugins
+    # Producer/consumer optimizations
+    producer.batch.size=16384
+    consumer.max.poll.records=500
+
+  # Sample FileStream source connector - reads a file and produces to Kafka
+  audit-source-connector.json: |
+    {
+      "name": "audit-file-source",
+      "config": {
+        "connector.class": "org.apache.kafka.connect.file.FileStreamSourceConnector",
+        "tasks.max": "1",
+        "file": "/tmp/audit-source.txt",
+        "topic": "banking-audit-events",
+        "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "value.converter": "org.apache.kafka.connect.storage.StringConverter"
+      }
+    }
+
+  # Sample FileStream sink connector - writes Kafka messages to a file
+  audit-sink-connector.json: |
+    {
+      "name": "audit-file-sink",
+      "config": {
+        "connector.class": "org.apache.kafka.connect.file.FileStreamSinkConnector",
+        "tasks.max": "1",
+        "file": "/tmp/audit-sink-output.txt",
+        "topics": "banking-audit-events",
+        "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "value.converter": "org.apache.kafka.connect.storage.StringConverter"
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-connect
+  namespace: kafka-enterprise
+  labels:
+    app: kafka-connect
+    component: connect
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-connect
+  template:
+    metadata:
+      labels:
+        app: kafka-connect
+        component: connect
+    spec:
+      initContainers:
+      # Wait for Kafka broker to be ready before starting Connect
+      - name: wait-for-kafka
+        image: quay.io/strimzi/kafka:1.2.0-kafka-4.3.1
+        imagePullPolicy: IfNotPresent
+        command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for Kafka bootstrap to be ready..."
+          until /opt/kafka/bin/kafka-topics.sh \
+            --bootstrap-server enterprise-kafka-kafka-bootstrap.kafka-enterprise.svc.cluster.local:9092 \
+            --list > /dev/null 2>&1; do
+            echo "Kafka not ready yet, retrying in 5s..."
+            sleep 5
+          done
+          echo "Kafka is ready!"
+      containers:
+      - name: kafka-connect
+        image: quay.io/strimzi/kafka:1.2.0-kafka-4.3.1
+        imagePullPolicy: IfNotPresent
+        command:
+        - sh
+        - -c
+        - |
+          # Create isolated plugin dir with ONLY the file connector
+          mkdir -p /plugins
+          cp /opt/kafka/libs/connect-file*.jar /plugins/
+          # Create a dummy audit source file for the FileStream connector demo
+          echo "Enterprise Kafka Connect started at $(date)" > /tmp/audit-source.txt
+          echo "Audit entry: banking-system initialized" >> /tmp/audit-source.txt
+          # Start connect-distributed with controlled heap
+          export KAFKA_HEAP_OPTS="-Xms256m -Xmx384m"
+          exec /opt/kafka/bin/connect-distributed.sh /config/connect-distributed.properties
+        ports:
+        - containerPort: 8083
+          name: http
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 768Mi
+        readinessProbe:
+          httpGet:
+            path: /connectors
+            port: 8083
+          initialDelaySeconds: 45
+          periodSeconds: 10
+          failureThreshold: 15
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8083
+          initialDelaySeconds: 90
+          periodSeconds: 15
+          failureThreshold: 12
+      volumes:
+      - name: config
+        configMap:
+          name: kafka-connect-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-connect
+  namespace: kafka-enterprise
+  labels:
+    app: kafka-connect
+spec:
+  type: ClusterIP
+  selector:
+    app: kafka-connect
+  ports:
+  - name: http
+    port: 8083
+    targetPort: 8083
+---
+# Also expose as enterprise-connect for Kafbat UI integration
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-connect
+  namespace: kafka-enterprise
+  labels:
+    app: kafka-connect
+spec:
+  type: ClusterIP
+  selector:
+    app: kafka-connect
+  ports:
+  - name: http
+    port: 8083
+    targetPort: 8083

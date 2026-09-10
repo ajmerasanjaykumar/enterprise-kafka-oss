@@ -1,0 +1,184 @@
+---
+# Fraud Alerts topic - receives alerts from the streaming detector
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: fraud-alerts-topic
+  namespace: kafka-enterprise
+  labels:
+    strimzi.io/cluster: enterprise-kafka
+spec:
+  topicName: fraud-alerts
+  partitions: 3
+  replicas: 1
+---
+# Streaming Fraud Detector
+# Consumes from banking-payments, produces fraud-alerts
+# Acts as a Flink-style stateful stream processing job
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streaming-fraud-detector
+  namespace: kafka-enterprise
+  labels:
+    app: streaming-fraud-detector
+    component: flink-stream
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: streaming-fraud-detector
+  template:
+    metadata:
+      labels:
+        app: streaming-fraud-detector
+        component: flink-stream
+    spec:
+      initContainers:
+      # Pre-install kafka-python-ng to avoid doing it inside the main container
+      - name: install-deps
+        image: python:3.11-slim
+        command:
+        - sh
+        - -c
+        - pip install --no-cache-dir --target /deps kafka-python-ng
+        volumeMounts:
+        - name: deps
+          mountPath: /deps
+      containers:
+      - name: fraud-detector
+        image: python:3.11-slim
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          cat << 'PYEOF' > /app/detector.py
+          import sys
+          sys.path.insert(0, '/deps')
+          import json
+          import time
+          import uuid
+          from datetime import datetime
+          from kafka import KafkaConsumer, KafkaProducer
+          from kafka.errors import NoBrokersAvailable
+
+          BOOTSTRAP = "enterprise-kafka-kafka-bootstrap.kafka-enterprise.svc.cluster.local:9092"
+          INPUT_TOPICS = ["banking-payments"]
+          OUTPUT_TOPIC  = "fraud-alerts"
+
+          print(f"[Streaming Fraud Detector] Waiting for Kafka broker at {BOOTSTRAP}...")
+
+          # --- Retry until broker is reachable ---
+          producer = None
+          consumer = None
+          for attempt in range(1, 61):
+              try:
+                  producer = KafkaProducer(
+                      bootstrap_servers=BOOTSTRAP,
+                      value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+                      retries=3,
+                  )
+                  consumer = KafkaConsumer(
+                      *INPUT_TOPICS,
+                      bootstrap_servers=BOOTSTRAP,
+                      group_id="streaming-fraud-detector-v2",
+                      auto_offset_reset="latest",
+                      value_deserializer=lambda m: json.loads(m.decode('utf-8', errors='ignore')) if m else None,
+                      session_timeout_ms=30000,
+                      heartbeat_interval_ms=10000,
+                  )
+                  print(f"[Streaming Fraud Detector] Connected to Kafka on attempt {attempt}. Listening on: {INPUT_TOPICS}")
+                  break
+              except NoBrokersAvailable:
+                  print(f"[Streaming Fraud Detector] Attempt {attempt}/60 - Broker not ready, retrying in 10s...")
+                  time.sleep(10)
+              except Exception as ex:
+                  print(f"[Streaming Fraud Detector] Attempt {attempt}/60 - Error: {ex}, retrying in 10s...")
+                  time.sleep(10)
+
+          if producer is None or consumer is None:
+              print("[Streaming Fraud Detector] FATAL: Could not connect to Kafka after 60 attempts. Exiting.")
+              exit(1)
+
+          # --- Stateful stream processing ---
+          account_history = {}
+
+          print("[Streaming Fraud Detector] Stream engine active. Monitoring for fraud patterns...")
+          for message in consumer:
+              try:
+                  data = message.value
+                  if not data:
+                      continue
+
+                  # Support both direct payments and CDC (Debezium) format
+                  payload = data.get("after", data)
+                  amount   = float(payload.get("amount", 0.0))
+                  acct     = payload.get("account_id", payload.get("sourceAccountIban", "UNKNOWN"))
+                  tx_id    = payload.get("transaction_id", payload.get("paymentId", str(uuid.uuid4())))
+                  currency = payload.get("currency", "USD")
+
+                  now = time.time()
+                  history = account_history.setdefault(acct, [])
+                  # Keep only last 60-second window
+                  account_history[acct] = [t for t in history if now - t < 60]
+                  account_history[acct].append(now)
+
+                  alerts = []
+
+                  # Rule 1: Large transaction alert (>=10,000)
+                  if amount >= 10000.00:
+                      alerts.append({
+                          "alertId":       f"ALT-{uuid.uuid4().hex[:8].upper()}",
+                          "transactionId": tx_id,
+                          "accountId":     acct,
+                          "amount":        amount,
+                          "currency":      currency,
+                          "alertType":     "HIGH_VALUE_ANOMALY",
+                          "severity":      "CRITICAL",
+                          "timestamp":     datetime.utcnow().isoformat() + "Z",
+                          "details":       f"Amount ${amount:,.2f} exceeds $10,000 compliance threshold",
+                          "sourceTopic":   message.topic,
+                      })
+
+                  # Rule 2: Velocity burst (>3 txns in 60s window)
+                  if len(account_history[acct]) >= 3:
+                      alerts.append({
+                          "alertId":       f"ALT-{uuid.uuid4().hex[:8].upper()}",
+                          "transactionId": tx_id,
+                          "accountId":     acct,
+                          "amount":        amount,
+                          "currency":      currency,
+                          "alertType":     "VELOCITY_BURST_ATTACK",
+                          "severity":      "HIGH",
+                          "timestamp":     datetime.utcnow().isoformat() + "Z",
+                          "details":       f"{len(account_history[acct])} transactions in 60s window — rapid velocity attack",
+                          "sourceTopic":   message.topic,
+                      })
+
+                  for alert in alerts:
+                      producer.send(OUTPUT_TOPIC, value=alert)
+                      print(f"[ALERT] {alert['alertType']} | Acct={acct} | Amount=${amount:.2f} | Severity={alert['severity']}")
+
+                  if alerts:
+                      producer.flush()
+
+              except Exception as e:
+                  print(f"[Streaming Fraud Detector] Processing error: {e}")
+          PYEOF
+          exec python3 -u /app/detector.py
+        volumeMounts:
+        - name: deps
+          mountPath: /deps
+        - name: app
+          mountPath: /app
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 300m
+            memory: 256Mi
+      volumes:
+      - name: deps
+        emptyDir: {}
+      - name: app
+        emptyDir: {}

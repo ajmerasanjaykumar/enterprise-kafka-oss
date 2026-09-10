@@ -37,7 +37,7 @@ is_admin {
 
 # --- Resource Managers ---
 allow {
-    team := manager_team
+    team := manager_teams[_]
     resource_name := input.action.resource.name
     startswith(lower(resource_name), concat("", [team, "-"]))
     operation_allowed_for_manager(input.action.operation)
@@ -46,15 +46,16 @@ allow {
 allow {
     input.action.resource.type == "CLUSTER"
     input.action.operation in ["DESCRIBE", "CREATE"]
-    manager_team
+    count(manager_teams) > 0
 }
 
-manager_team = team {
+manager_teams[team] {
     group := input.request.userData.claims.groups[_]
     endswith(group, "_ResourceManagers")
-    team := lower(substring(group, 0, count(group) - 17))
+    raw := lower(substring(group, 0, count(group) - 17))
+    team := replace(replace(raw, "teama", "team-a"), "teamb", "team-b")
 }
-manager_team = team {
+manager_teams[team] {
     p := input.request.context.principal.name
     clean_p := trim_prefix(p, "User:")
     endswith(clean_p, "-manager")
@@ -65,18 +66,19 @@ operation_allowed_for_manager(op) { op in ["READ", "WRITE", "CREATE", "DELETE", 
 
 # --- Writers (DeveloperWrite) ---
 allow {
-    team := writer_team
+    team := writer_teams[_]
     resource_name := input.action.resource.name
     startswith(lower(resource_name), concat("", [team, "-"]))
     operation_allowed_for_writer(input.action.operation)
 }
 
-writer_team = team {
+writer_teams[team] {
     group := input.request.userData.claims.groups[_]
     endswith(group, "_Writers")
-    team := lower(substring(group, 0, count(group) - 8))
+    raw := lower(substring(group, 0, count(group) - 8))
+    team := replace(replace(raw, "teama", "team-a"), "teamb", "team-b")
 }
-writer_team = team {
+writer_teams[team] {
     p := input.request.context.principal.name
     clean_p := trim_prefix(p, "User:")
     endswith(clean_p, "-writer")
@@ -87,26 +89,27 @@ operation_allowed_for_writer(op) { op in ["WRITE", "DESCRIBE", "DESCRIBE_CONFIGS
 
 # --- Readers (DeveloperRead) ---
 allow {
-    team := reader_team
+    team := reader_teams[_]
     resource_name := input.action.resource.name
     startswith(lower(resource_name), concat("", [team, "-"]))
     operation_allowed_for_reader(input.action.operation)
 }
 
 allow {
-    team := reader_team
+    team := reader_teams[_]
     input.action.resource.type == "GROUP"
     resource_name := input.action.resource.name
     startswith(lower(resource_name), concat("", [team, "-"]))
     input.action.operation in ["READ", "DESCRIBE"]
 }
 
-reader_team = team {
+reader_teams[team] {
     group := input.request.userData.claims.groups[_]
     endswith(group, "_Readers")
-    team := lower(substring(group, 0, count(group) - 8))
+    raw := lower(substring(group, 0, count(group) - 8))
+    team := replace(replace(raw, "teama", "team-a"), "teamb", "team-b")
 }
-reader_team = team {
+reader_teams[team] {
     p := input.request.context.principal.name
     clean_p := trim_prefix(p, "User:")
     endswith(clean_p, "-reader")
@@ -114,3 +117,4 @@ reader_team = team {
 }
 
 operation_allowed_for_reader(op) { op in ["READ", "DESCRIBE", "DESCRIBE_CONFIGS"] }
+

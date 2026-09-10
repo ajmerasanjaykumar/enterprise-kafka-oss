@@ -16,39 +16,16 @@ spec:
         app: kafbat-ui
     spec:
       containers:
-      - name: keycloak-proxy
-        image: alpine/socat:latest
-        args: ["TCP-LISTEN:8081,fork,reuseaddr", "TCP:keycloak.kafka-enterprise.svc.cluster.local:8080"]
       - name: kafbat-ui
         image: provectuslabs/kafka-ui:latest
         ports:
         - containerPort: 8080
           name: http
         env:
-        - name: LOGGING_LEVEL_COM_PROVECTUS_KAFKA_UI
-          value: DEBUG
-        - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY
-          value: DEBUG
         - name: SPRING_CONFIG_ADDITIONAL_LOCATION
           value: optional:file:/etc/kafkaui/config.yml
         - name: AUTH_TYPE
-          value: OAUTH2
-        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_PROVIDER
-          value: oauth
-        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_CLIENT_ID
-          value: kafka-ui
-        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_CLIENT_SECRET
-          value: kafka-ui-secret
-        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_ISSUER_URI
-          value: http://localhost:8081/realms/enterprise-kafka
-        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_USER_NAME_ATTRIBUTE
-          value: preferred_username
-        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_SCOPE
-          value: openid,profile,roles,email
-        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_CUSTOM_PARAMS_TYPE
-          value: oauth
-        - name: AUTH_OAUTH2_CLIENT_KEYCLOAK_CUSTOM_PARAMS_ROLES_FIELD
-          value: groups
+          value: DISABLED
         - name: KAFKA_CLUSTERS_0_NAME
           value: enterprise-kafka
         - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
@@ -62,19 +39,34 @@ spec:
             secretKeyRef:
               name: admin
               key: sasl.jaas.config
+        - name: KAFKA_CLUSTERS_0_SCHEMAREGISTRY
+          value: http://karapace-schema-registry.kafka-enterprise.svc.cluster.local:8081
+        - name: KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME
+          value: enterprise-connect
+        - name: KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS
+          value: http://kafka-connect.kafka-enterprise.svc.cluster.local:8083
+        resources:
+          requests:
+            cpu: 150m
+            memory: 384Mi
+          limits:
+            cpu: 800m
+            memory: 768Mi
         volumeMounts:
         - name: config-volume
           mountPath: /etc/kafkaui
         readinessProbe:
           tcpSocket:
             port: 8080
-          initialDelaySeconds: 25
+          initialDelaySeconds: 45
           periodSeconds: 10
+          failureThreshold: 15
         livenessProbe:
           tcpSocket:
             port: 8080
-          initialDelaySeconds: 30
+          initialDelaySeconds: 90
           periodSeconds: 15
+          failureThreshold: 15
       volumes:
       - name: config-volume
         configMap:

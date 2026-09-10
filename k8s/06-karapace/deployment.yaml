@@ -1,0 +1,106 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: kafka-schemas-topic
+  namespace: kafka-enterprise
+  labels:
+    strimzi.io/cluster: enterprise-kafka
+spec:
+  topicName: _schemas
+  partitions: 1
+  replicas: 1
+  config:
+    cleanup.policy: compact
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: karapace-config
+  namespace: kafka-enterprise
+  labels:
+    app: karapace-schema-registry
+data:
+  karapace.config.json: |
+    {
+      "karapace_registry": true,
+      "karapace_rest": false,
+      "host": "0.0.0.0",
+      "port": 8081,
+      "topic_name": "_schemas",
+      "replication_factor": 1,
+      "compatibility": "BACKWARD"
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: karapace-schema-registry
+  namespace: kafka-enterprise
+  labels:
+    app: karapace-schema-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: karapace-schema-registry
+  template:
+    metadata:
+      labels:
+        app: karapace-schema-registry
+    spec:
+      containers:
+      - name: karapace
+        image: ghcr.io/aiven/karapace:latest
+        command:
+        - /venv/bin/karapace
+        - /etc/karapace/karapace.config.json
+        ports:
+        - containerPort: 8081
+          name: http
+        env:
+        - name: KARAPACE_BOOTSTRAP_URI
+          value: "enterprise-kafka-kafka-bootstrap.kafka-enterprise.svc.cluster.local:9095"
+        - name: KARAPACE_SECURITY_PROTOCOL
+          value: "SASL_PLAINTEXT"
+        - name: KARAPACE_SASL_MECHANISM
+          value: "SCRAM-SHA-512"
+        - name: KARAPACE_SASL_PLAIN_USERNAME
+          value: "admin"
+        - name: KARAPACE_SASL_PLAIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: admin
+              key: password
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/karapace
+        readinessProbe:
+          tcpSocket:
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          tcpSocket:
+            port: 8081
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: config-volume
+        configMap:
+          name: karapace-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: karapace-schema-registry
+  namespace: kafka-enterprise
+  labels:
+    app: karapace-schema-registry
+spec:
+  type: ClusterIP
+  selector:
+    app: karapace-schema-registry
+  ports:
+  - name: http
+    port: 8081
+    targetPort: 8081

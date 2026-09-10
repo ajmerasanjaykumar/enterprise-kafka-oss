@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: banking-postgres
+  namespace: kafka-enterprise
+  labels:
+    app: banking-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: banking-postgres
+  template:
+    metadata:
+      labels:
+        app: banking-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        imagePullPolicy: IfNotPresent
+        args:
+        - "-c"
+        - "wal_level=logical"
+        - "-c"
+        - "max_wal_senders=4"
+        - "-c"
+        - "max_replication_slots=4"
+        env:
+        - name: POSTGRES_USER
+          value: "bankadmin"
+        - name: POSTGRES_PASSWORD
+          value: "banksecret123"
+        - name: POSTGRES_DB
+          value: "banking"
+        ports:
+        - containerPort: 5432
+          name: postgres
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: banking-postgres
+  namespace: kafka-enterprise
+  labels:
+    app: banking-postgres
+spec:
+  type: ClusterIP
+  selector:
+    app: banking-postgres
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432

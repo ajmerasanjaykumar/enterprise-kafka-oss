@@ -1,0 +1,17 @@
+{
+  "name": "banking-postgres-cdc-source",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "tasks.max": "1",
+    "plugin.name": "pgoutput",
+    "database.hostname": "banking-postgres.kafka-enterprise.svc.cluster.local",
+    "database.port": "5432",
+    "database.user": "bankadmin",
+    "database.password": "banksecret123",
+    "database.dbname": "banking",
+    "topic.prefix": "banking",
+    "table.include.list": "public.bank_transactions",
+    "schema.history.internal.kafka.bootstrap.servers": "enterprise-kafka-kafka-bootstrap.kafka-enterprise.svc.cluster.local:9092",
+    "schema.history.internal.kafka.topic": "schema-changes.banking"
+  }
+}
