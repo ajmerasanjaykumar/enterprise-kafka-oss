@@ -18,6 +18,9 @@ import org.enterprise.alertengine.normalizer.GrafanaNormalizerFunction;
 import org.enterprise.alertengine.operators.DeduplicationProcessFunction;
 import org.enterprise.alertengine.operators.EnrichmentAndPriorityFunction;
 import org.enterprise.alertengine.operators.IncidentCorrelationFunction;
+import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.typeinfo.Types;
+import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.enterprise.alertengine.operators.LifecycleStateMachineFunction;
 
 public class AlertEngineApplication {
@@ -29,6 +32,7 @@ public class AlertEngineApplication {
         System.out.println("[AlertEngineApplication] Starting with Kafka bootstrap: " + bootstrapServers);
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.enableCheckpointing(1000);
 
         // 1. Kafka Source: events.raw
         KafkaSource<String> rawEventSource = KafkaSource.<String>builder()
@@ -48,6 +52,7 @@ public class AlertEngineApplication {
         // 2. Normalization: Grafana Webhook JSON -> CanonicalEvent
         SingleOutputStreamOperator<CanonicalEvent> canonicalStream = rawStream
                 .process(new GrafanaNormalizerFunction())
+                .returns(CanonicalEvent.class)
                 .name("Grafana-Normalizer");
 
         // Dead letter sink
@@ -61,18 +66,21 @@ public class AlertEngineApplication {
 
         // Emit normalized events to Kafka
         enrichedStream
-                .map(MAPPER::writeValueAsString)
+                .map(new CanonicalEventToJsonMap())
+                .returns(Types.STRING)
                 .sinkTo(createKafkaSink(bootstrapServers, "events.normalized"));
 
         // 4. Deduplication & Grouping
         SingleOutputStreamOperator<AlertGroup> alertGroupStream = enrichedStream
                 .keyBy(CanonicalEvent::getDeduplicationKey)
                 .process(new DeduplicationProcessFunction())
+                .returns(AlertGroup.class)
                 .name("Deduplication-And-Grouping");
 
         // Emit alert groups to Kafka
         alertGroupStream
-                .map(MAPPER::writeValueAsString)
+                .map(new AlertGroupToJsonMap())
+                .returns(Types.STRING)
                 .sinkTo(createKafkaSink(bootstrapServers, "alert-groups"));
 
         // 5. Alert Lifecycle State Machine (Open -> Resolve -> Reopen -> Flap)
@@ -80,25 +88,65 @@ public class AlertEngineApplication {
         SingleOutputStreamOperator<AlertStateChange> stateChangeStream = uniqueAlerts
                 .keyBy(CanonicalEvent::getDeduplicationKey)
                 .process(new LifecycleStateMachineFunction())
+                .returns(AlertStateChange.class)
                 .name("Alert-Lifecycle-StateMachine");
 
         // Emit state changes to Kafka
         stateChangeStream
-                .map(MAPPER::writeValueAsString)
+                .map(new AlertStateChangeToJsonMap())
+                .returns(Types.STRING)
                 .sinkTo(createKafkaSink(bootstrapServers, "alerts.state-changes"));
 
         // 6. Cross-Alert Incident Correlation
         SingleOutputStreamOperator<Incident> incidentStream = stateChangeStream
                 .keyBy(AlertStateChange::getService)
                 .process(new IncidentCorrelationFunction())
+                .returns(Incident.class)
                 .name("Incident-Correlation-Engine");
 
         // Emit incidents to Kafka
         incidentStream
-                .map(MAPPER::writeValueAsString)
+                .map(new IncidentToJsonMap())
+                .returns(Types.STRING)
                 .sinkTo(createKafkaSink(bootstrapServers, "incidents.state-changes"));
 
         env.execute("Enterprise-Alert-And-Incident-Management-Engine");
+    }
+
+    public static class CanonicalEventToJsonMap implements MapFunction<CanonicalEvent, String> {
+        private static final long serialVersionUID = 1L;
+        private static final ObjectMapper MAPPER = new ObjectMapper();
+        @Override
+        public String map(CanonicalEvent value) throws Exception {
+            return MAPPER.writeValueAsString(value);
+        }
+    }
+
+    public static class AlertGroupToJsonMap implements MapFunction<AlertGroup, String> {
+        private static final long serialVersionUID = 1L;
+        private static final ObjectMapper MAPPER = new ObjectMapper();
+        @Override
+        public String map(AlertGroup value) throws Exception {
+            return MAPPER.writeValueAsString(value);
+        }
+    }
+
+    public static class AlertStateChangeToJsonMap implements MapFunction<AlertStateChange, String> {
+        private static final long serialVersionUID = 1L;
+        private static final ObjectMapper MAPPER = new ObjectMapper();
+        @Override
+        public String map(AlertStateChange value) throws Exception {
+            return MAPPER.writeValueAsString(value);
+        }
+    }
+
+    public static class IncidentToJsonMap implements MapFunction<Incident, String> {
+        private static final long serialVersionUID = 1L;
+        private static final ObjectMapper MAPPER = new ObjectMapper();
+        @Override
+        public String map(Incident value) throws Exception {
+            return MAPPER.writeValueAsString(value);
+        }
     }
 
     private static KafkaSink<String> createKafkaSink(String bootstrapServers, String topic) {
@@ -110,6 +158,9 @@ public class AlertEngineApplication {
                                 .setValueSerializationSchema(new SimpleStringSchema())
                                 .build()
                 )
+                .setDeliveryGuarantee(DeliveryGuarantee.NONE)
+                .setProperty("batch.size", "0")
+                .setProperty("linger.ms", "1")
                 .build();
     }
 }

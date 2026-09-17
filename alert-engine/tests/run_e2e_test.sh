@@ -6,64 +6,79 @@ KAFKA_CONTAINER="alert-engine-kafka"
 JM_CONTAINER="alert-engine-jobmanager"
 
 echo "=== 1. Checking Kafka Broker Availability ==="
-docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null
+docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server kafka:9092 > /dev/null
 
-echo "=== 2. Creating Required Topics ==="
+echo "=== 2. Checking Topics ==="
+EXISTING_TOPICS=$(docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list 2>/dev/null || true)
 TOPICS=("events.raw" "events.normalized" "alert-groups" "alerts.state-changes" "incidents.state-changes" "events.dead-letter")
 for topic in "${TOPICS[@]}"; do
-  docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic "$topic" --partitions 1 --replication-factor 1
+  if ! echo "$EXISTING_TOPICS" | grep -qx "$topic"; then
+    echo "Creating topic $topic..."
+    docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --topic "$topic" --partitions 1 --replication-factor 1
+  fi
 done
 
-echo "=== 3. Submitting Flink Job to Cluster ==="
-JOB_ID=$(docker exec -i "$JM_CONTAINER" ./bin/flink list | grep -o ':[ ]*[0-9a-f]\{32\}' | awk '{print $2}' || true)
-if [ -z "$JOB_ID" ]; then
-  echo "Submitting alert-engine-flink.jar..."
-  docker exec -i "$JM_CONTAINER" ./bin/flink run -d /opt/flink/usrlib/alert-engine-flink-1.0.0.jar kafka:9092
-  sleep 5
-else
-  echo "Flink Job already running with ID: $JOB_ID"
+
+echo "=== 3. Checking Flink Job Status ==="
+RUNNING_JOBS=$(docker exec -i "$JM_CONTAINER" ./bin/flink list 2>/dev/null | grep -E "Enterprise-Alert|AlertEngineApplication" || true)
+if [ -z "$RUNNING_JOBS" ]; then
+  echo "Submitting Flink Job..."
+  docker cp "$DIR/../flink-job/target/alert-engine-flink-1.0.0.jar" "$JM_CONTAINER":/opt/flink/alert-engine-flink-1.0.0.jar
+  docker exec -i "$JM_CONTAINER" ./bin/flink run -d /opt/flink/alert-engine-flink-1.0.0.jar kafka:9092
+  sleep 6
+  RUNNING_JOBS=$(docker exec -i "$JM_CONTAINER" ./bin/flink list 2>/dev/null | grep -E "Enterprise-Alert|AlertEngineApplication" || true)
 fi
+echo "Running Flink Jobs: $RUNNING_JOBS"
 
 echo "=== 4. Streaming Simulated Payloads to events.raw ==="
-# Scenario 1: Deduplication
+echo "Injecting Scenario 1: Deduplication..."
 python3 "$DIR/simulate_alerts.py" dedup | docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic events.raw
-sleep 1
+sleep 2
 
-# Scenario 2: Normal Lifecycle
+echo "Injecting Scenario 2: Normal Lifecycle..."
 python3 "$DIR/simulate_alerts.py" lifecycle | docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic events.raw
-sleep 1
+sleep 2
 
-# Scenario 3: Reopen
+echo "Injecting Scenario 3: Reopen..."
 python3 "$DIR/simulate_alerts.py" reopen | docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic events.raw
-sleep 1
+sleep 2
 
-# Scenario 4: Flapping
+echo "Injecting Scenario 4: Flapping..."
 python3 "$DIR/simulate_alerts.py" flapping | docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic events.raw
-sleep 1
+sleep 2
 
-# Scenario 5: Incident Correlation
+echo "Injecting Scenario 5: Incident Correlation..."
 python3 "$DIR/simulate_alerts.py" correlation | docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic events.raw
-sleep 3
+sleep 4
 
 echo "=== 5. Reading Output Topics & Running Verification ==="
 CONSUME_TOPIC() {
   local TOPIC_NAME="$1"
-  docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic "$TOPIC_NAME" --from-beginning --timeout-ms 5000 2>/dev/null || true
+  docker exec -i "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic "$TOPIC_NAME" --from-beginning --timeout-ms 6000 2>/dev/null || true
 }
 
+echo "Consuming alert-groups..."
 ALERT_GROUPS=$(CONSUME_TOPIC "alert-groups")
+echo "Consuming alerts.state-changes..."
 STATE_CHANGES=$(CONSUME_TOPIC "alerts.state-changes")
+echo "Consuming incidents.state-changes..."
 INCIDENTS=$(CONSUME_TOPIC "incidents.state-changes")
 
-python3 -c "
-import json, sys
+python3 - <<EOF
+import json
+
+def parse_lines(raw_text):
+    return [l for l in raw_text.strip().split('\n') if l.strip().startswith('{')]
+
 data = {
-    'alert-groups': '''$ALERT_GROUPS'''.strip().split('\n'),
-    'alerts.state-changes': '''$STATE_CHANGES'''.strip().split('\n'),
-    'incidents.state-changes': '''$INCIDENTS'''.strip().split('\n')
+    'alert-groups': parse_lines("""$ALERT_GROUPS"""),
+    'alerts.state-changes': parse_lines("""$STATE_CHANGES"""),
+    'incidents.state-changes': parse_lines("""$INCIDENTS""")
 }
+
 with open('$DIR/results.json', 'w') as f:
     json.dump(data, f, indent=2)
-"
+print("Saved outputs to $DIR/results.json")
+EOF
 
 python3 "$DIR/test_suite_verification.py" "$DIR/results.json"

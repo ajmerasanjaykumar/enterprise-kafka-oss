@@ -41,7 +41,7 @@ def make_alert_item(alertname, instance, service, severity="critical", status="f
     }
 
 def scenario_1_deduplication():
-    print("\n--- Scenario 1: Deduplication (Burst of 10 duplicate HighCPU alerts) ---")
+    sys.stderr.write("\n--- Scenario 1: Deduplication (Burst of 10 duplicate HighCPU alerts) ---\n")
     payloads = []
     for i in range(10):
         item = make_alert_item(
@@ -56,7 +56,7 @@ def scenario_1_deduplication():
     return payloads
 
 def scenario_2_normal_lifecycle():
-    print("\n--- Scenario 2: Normal Lifecycle (Firing -> Resolved) ---")
+    sys.stderr.write("\n--- Scenario 2: Normal Lifecycle (Firing -> Resolved) ---\n")
     firing_item = make_alert_item(
         alertname="DiskSpaceLow",
         instance="storage-node-03",
@@ -79,7 +79,7 @@ def scenario_2_normal_lifecycle():
     ]
 
 def scenario_3_reopen():
-    print("\n--- Scenario 3: Reopen (Firing -> Resolved -> Rapid Re-fire within 10m) ---")
+    sys.stderr.write("\n--- Scenario 3: Reopen (Firing -> Resolved -> Rapid Re-fire within 10m) ---\n")
     item_f1 = make_alert_item("MemoryLeakDetected", "worker-node-07", "auth-service", "critical", "firing")
     item_r1 = make_alert_item("MemoryLeakDetected", "worker-node-07", "auth-service", "critical", "resolved")
     item_f2 = make_alert_item("MemoryLeakDetected", "worker-node-07", "auth-service", "critical", "firing", "Memory leak re-occurred")
@@ -90,7 +90,7 @@ def scenario_3_reopen():
     ]
 
 def scenario_4_flapping():
-    print("\n--- Scenario 4: Flapping Detection (3 toggles in quick succession) ---")
+    sys.stderr.write("\n--- Scenario 4: Flapping Detection (3 toggles in quick succession) ---\n")
     payloads = []
     states = ["firing", "resolved", "firing", "resolved", "firing"]
     for s in states:
@@ -99,7 +99,7 @@ def scenario_4_flapping():
     return payloads
 
 def scenario_5_correlation_incident():
-    print("\n--- Scenario 5: Multi-Alert Incident Correlation (Cascade across payment-service) ---")
+    sys.stderr.write("\n--- Scenario 5: Multi-Alert Incident Correlation (Cascade across payment-service) ---\n")
     # 3 cascading alerts representing one operational outage
     db_alert = make_alert_item("DatabaseConnectionTimeout", "db-primary-01", "payment-service", "critical", "firing", "Pool exhausted")
     err_alert = make_alert_item("HighHTTP5xxErrorRate", "ingress-gateway-01", "payment-service", "high", "firing", "5xx rate > 20%")
@@ -112,19 +112,19 @@ def scenario_5_correlation_incident():
 
 if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "all"
-    all_scenarios = {
-        "dedup": scenario_1_deduplication(),
-        "lifecycle": scenario_2_normal_lifecycle(),
-        "reopen": scenario_3_reopen(),
-        "flapping": scenario_4_flapping(),
-        "correlation": scenario_5_correlation_incident()
+    scenario_map = {
+        "dedup": scenario_1_deduplication,
+        "lifecycle": scenario_2_normal_lifecycle,
+        "reopen": scenario_3_reopen,
+        "flapping": scenario_4_flapping,
+        "correlation": scenario_5_correlation_incident
     }
     
-    if mode in all_scenarios:
-        for p in all_scenarios[mode]:
+    if mode in scenario_map:
+        for p in scenario_map[mode]():
             print(json.dumps(p))
     else:
-        for name, items in all_scenarios.items():
-            print(f"# Scenario: {name}")
-            for p in items:
+        for name, fn in scenario_map.items():
+            sys.stderr.write(f"# Scenario: {name}\n")
+            for p in fn():
                 print(json.dumps(p))

@@ -68,7 +68,7 @@ public class LifecycleStateMachineFunction extends KeyedProcessFunction<String, 
             state.alertId = "ALT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
             state.totalOccurrences = 1;
             state.toggleWindowStartMs = now;
-            state.toggleCount = 1;
+            state.toggleCount = 0;
 
             if (isFiring) {
                 state.currentState = "OPEN";
@@ -105,7 +105,7 @@ public class LifecycleStateMachineFunction extends KeyedProcessFunction<String, 
         if (isFiring) {
             if ("RESOLVED".equals(state.currentState)) {
                 state.toggleCount++;
-                if (state.toggleCount >= FLAPPING_THRESHOLD) {
+                if (state.toggleCount > FLAPPING_THRESHOLD) {
                     state.currentState = "FLAPPING";
                     change.setTransition("FLAPPING_DETECTED");
                     change.setFlapping(true);

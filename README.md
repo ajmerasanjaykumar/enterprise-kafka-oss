@@ -66,12 +66,33 @@ Run the automated RBAC verification test suite:
 ./scripts/06-test-rbac.sh
 ```
 
+### 3. Real-Time Alert & Incident Management Engine (Kafka + Flink)
+The platform includes an enterprise streaming engine for real-time alert deduplication, state machine tracking, flapping detection, and multi-alert incident correlation with automated root-cause analysis.
+
+👉 **[Read the Full Alert Engine Documentation](alert-engine/README.md)**
+
+```bash
+cd alert-engine
+# Run interactive live demonstration
+./run_demo.sh
+
+# Run end-to-end automated verification test suite
+./tests/run_e2e_test.sh
+```
+
 ---
 
 ## Repository Structure
 
 ```
 .
+├── alert-engine/                 # Real-time Kafka + Flink Alert & Incident Engine
+│   ├── README.md                 # Complete problem statement, architecture & guide
+│   ├── ARCHITECTURE.md           # Formal technical specification & state diagrams
+│   ├── docker-compose.yml        # Standalone Kafka + Flink development cluster
+│   ├── run_demo.sh               # Live interactive alert processing demo
+│   ├── flink-job/                # Stateful Flink streaming application (Java 17)
+│   └── tests/                    # E2E simulation harness & verification tests
 ├── kind/
 │   └── kind-config.yaml          # Local Kind cluster with port forwards
 ├── k8s/
