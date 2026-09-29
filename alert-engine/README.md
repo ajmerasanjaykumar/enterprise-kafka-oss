@@ -1,5 +1,7 @@
 # Enterprise Real-Time Alert & Incident Management Engine
 
+> 📘 **Executive & Architectural Blueprint**: For an in-depth breakdown of how this engine maps to all 13 stages of **ServiceNow ITOM Event Management**, why it outperforms relational database alerting, and how to pitch its power to executives, architects, and SRE teams, see [SERVICENOW_ALERT_MANAGEMENT_SOLUTIONS.md](file:///Users/sanjay/Desktop/enterprise-kafka-oss/alert-engine/SERVICENOW_ALERT_MANAGEMENT_SOLUTIONS.md).
+
 A production-grade, event-driven alert streaming and incident management platform built with **Apache Kafka** and **Apache Flink**.
 
 This engine transforms noisy, uncoordinated alert webhooks (Grafana, Alertmanager, Prometheus, Datadog) into deduplicated alert streams, deterministic lifecycle state transitions, and correlated high-level incidents with automated root-cause election.

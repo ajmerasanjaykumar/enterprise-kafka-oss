@@ -1,5 +1,7 @@
 # Enterprise Alert & Incident Management Engine (Apache Flink Architecture)
 
+> 📘 **Detailed ServiceNow ITOM Feasibility Guide**: For the stage-by-stage comparison and feasibility analysis against ServiceNow ITOM Event Management, see [SERVICENOW_ALERT_MANAGEMENT_SOLUTIONS.md](file:///Users/sanjay/Desktop/enterprise-kafka-oss/alert-engine/SERVICENOW_ALERT_MANAGEMENT_SOLUTIONS.md).
+
 ## Executive Summary
 This project implements an open-source, production-grade, real-time **Alert & Incident Management Engine** modeled after the architecture of systems like **ServiceNow ITOM Event Management**, **PagerDuty**, and **Datadog Alerting**.
 
